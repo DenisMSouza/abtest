@@ -1,0 +1,323 @@
+import { Request, Response } from "express";
+import { Experiment, Variation, UserVariation } from "../models";
+
+export const createExperiment = async (req: Request, res: Response) => {
+  try {
+    const { name, description, version, startDate, endDate, variations } =
+      req.body;
+
+    // Validate variations weights sum to 100%
+    if (variations && variations.length > 0) {
+      const totalWeight = variations.reduce((sum: number, variation: any) => {
+        return sum + (variation.weight || 0);
+      }, 0);
+
+      // Allow for small floating point precision errors (0.01%)
+      if (Math.abs(totalWeight - 1.0) > 0.0001) {
+        return res.status(400).json({
+          error: "Variation weights must sum to 100% (1.0)",
+          totalWeight: totalWeight,
+          expectedWeight: 1.0,
+        });
+      }
+    }
+
+    const experiment = await Experiment.create({
+      name,
+      description,
+      version,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      isActive: true,
+    });
+
+    // Create variations
+    if (variations && variations.length > 0) {
+      await Promise.all(
+        variations.map((variation: any) =>
+          Variation.create({
+            experimentId: experiment.id,
+            name: variation.name,
+            weight: variation.weight || 1.0,
+            isBaseline: variation.isBaseline || false,
+          })
+        )
+      );
+    }
+
+    const experimentWithVariations = await Experiment.findByPk(experiment.id, {
+      include: [{ model: Variation, as: "variations" }],
+    });
+
+    res.status(201).json(experimentWithVariations);
+  } catch (error) {
+    console.error("Error creating experiment:", error);
+    res.status(500).json({ error: "Failed to create experiment" });
+  }
+};
+
+export const getExperiments = async (req: Request, res: Response) => {
+  try {
+    const experiments = await Experiment.findAll({
+      include: [{ model: Variation, as: "variations" }],
+      order: [["createdAt", "DESC"]],
+    });
+
+    // Calculate isActive based on current date and endDate
+    const now = new Date();
+    const experimentsWithCalculatedActive = experiments.map(
+      (experiment: any) => {
+        let isActive = experiment.isActive;
+
+        // If experiment has an endDate and it's in the past, it should be inactive
+        if (experiment.endDate && new Date(experiment.endDate) < now) {
+          isActive = false;
+        }
+
+        return {
+          ...experiment.toJSON(),
+          isActive,
+        };
+      }
+    );
+
+    res.json(experimentsWithCalculatedActive);
+  } catch (error) {
+    console.error("Error fetching experiments:", error);
+    res.status(500).json({ error: "Failed to fetch experiments" });
+  }
+};
+
+export const getExperiment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const experiment = await Experiment.findByPk(id, {
+      include: [{ model: Variation, as: "variations" }],
+    });
+
+    if (!experiment) {
+      return res.status(404).json({ error: "Experiment not found" });
+    }
+
+    // Calculate isActive based on current date and endDate
+    const now = new Date();
+    let isActive = experiment.isActive;
+
+    // If experiment has an endDate and it's in the past, it should be inactive
+    if (experiment.endDate && new Date(experiment.endDate) < now) {
+      isActive = false;
+    }
+
+    const experimentWithCalculatedActive = {
+      ...experiment.toJSON(),
+      isActive,
+    };
+
+    res.json(experimentWithCalculatedActive);
+  } catch (error) {
+    console.error("Error fetching experiment:", error);
+    res.status(500).json({ error: "Failed to fetch experiment" });
+  }
+};
+
+export const updateExperiment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, description, version, startDate, endDate, isActive } =
+      req.body;
+
+    const experiment = await Experiment.findByPk(id);
+    if (!experiment) {
+      return res.status(404).json({ error: "Experiment not found" });
+    }
+
+    await experiment.update({
+      name,
+      description,
+      version,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      isActive,
+    });
+
+    const updatedExperiment = await Experiment.findByPk(id, {
+      include: [{ model: Variation, as: "variations" }],
+    });
+
+    res.json(updatedExperiment);
+  } catch (error) {
+    console.error("Error updating experiment:", error);
+    res.status(500).json({ error: "Failed to update experiment" });
+  }
+};
+
+export const deleteExperiment = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const experiment = await Experiment.findByPk(id);
+
+    if (!experiment) {
+      return res.status(404).json({ error: "Experiment not found" });
+    }
+
+    await experiment.destroy();
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting experiment:", error);
+    res.status(500).json({ error: "Failed to delete experiment" });
+  }
+};
+
+export const getExperimentVariation = async (req: Request, res: Response) => {
+  try {
+    const { experimentId } = req.params;
+    const { userId, sessionId } = req.query;
+
+    // Find existing user variation
+    const whereClause: any = { experimentId };
+    if (userId) whereClause.userId = userId as string;
+    if (sessionId) whereClause.sessionId = sessionId as string;
+
+    const userVariation = await UserVariation.findOne({
+      where: whereClause,
+      include: [{ model: Variation, as: "variation" }],
+    });
+
+    if (userVariation) {
+      return res.json([
+        {
+          experiment: experimentId,
+          variation: (userVariation as any).variation.name,
+          timestamp: userVariation.timestamp,
+        },
+      ]);
+    }
+
+    res.json([]);
+  } catch (error) {
+    console.error("Error fetching experiment variation:", error);
+    res.status(500).json({ error: "Failed to fetch experiment variation" });
+  }
+};
+
+export const persistExperimentVariation = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { experimentId, variation } = req.body;
+    const { userId, sessionId } = req.query;
+
+    // Find the variation by name
+    const variationRecord = await Variation.findOne({
+      where: {
+        experimentId,
+        name: variation,
+      },
+    });
+
+    if (!variationRecord) {
+      return res.status(404).json({ error: "Variation not found" });
+    }
+
+    // Check if user already has a variation for this experiment
+    const whereClause: any = { experimentId };
+    if (userId) whereClause.userId = userId as string;
+    if (sessionId) whereClause.sessionId = sessionId as string;
+
+    const existingVariation = await UserVariation.findOne({
+      where: whereClause,
+    });
+
+    if (existingVariation) {
+      return res.json({ message: "Variation already exists for this user" });
+    }
+
+    // Create new user variation
+    const userVariation = await UserVariation.create({
+      experimentId,
+      variationId: variationRecord.id,
+      userId: userId as string,
+      sessionId: sessionId as string,
+      timestamp: new Date(),
+    });
+
+    res.status(201).json(userVariation);
+  } catch (error) {
+    console.error("Error persisting experiment variation:", error);
+    res.status(500).json({ error: "Failed to persist experiment variation" });
+  }
+};
+
+export const getExperimentStats = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const experiment = await Experiment.findByPk(id, {
+      include: [
+        {
+          model: Variation,
+          as: "variations",
+          include: [
+            {
+              model: UserVariation,
+              as: "userVariations",
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!experiment) {
+      return res.status(404).json({ error: "Experiment not found" });
+    }
+
+    const variations = (experiment as any).variations || [];
+    const stats = variations.map((variation: any) => ({
+      id: variation.id,
+      name: variation.name,
+      weight: variation.weight,
+      isBaseline: variation.isBaseline,
+      userCount: variation.userVariations?.length || 0,
+      percentage:
+        variations.reduce(
+          (total: number, v: any) => total + (v.userVariations?.length || 0),
+          0
+        ) > 0
+          ? ((variation.userVariations?.length || 0) /
+              variations.reduce(
+                (total: number, v: any) =>
+                  total + (v.userVariations?.length || 0),
+                0
+              )) *
+            100
+          : 0,
+    }));
+
+    // Calculate isActive based on current date and endDate
+    const now = new Date();
+    let isActive = experiment.isActive;
+
+    // If experiment has an endDate and it's in the past, it should be inactive
+    if (experiment.endDate && new Date(experiment.endDate) < now) {
+      isActive = false;
+    }
+
+    res.json({
+      experiment: {
+        id: experiment.id,
+        name: experiment.name,
+        description: experiment.description,
+        isActive: isActive,
+      },
+      variations: stats,
+      totalUsers: variations.reduce(
+        (total: number, v: any) => total + (v.userVariations?.length || 0),
+        0
+      ),
+    });
+  } catch (error) {
+    console.error("Error fetching experiment stats:", error);
+    res.status(500).json({ error: "Failed to fetch experiment stats" });
+  }
+};
