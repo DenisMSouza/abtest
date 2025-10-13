@@ -26,25 +26,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div className="max-w-4xl mx-auto py-6 lg:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8 lg:mb-12">
+          <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
             A/B Testing Platform
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-lg lg:text-xl text-gray-600 mb-6 lg:mb-8">
             Create, manage, and analyze A/B tests with ease
           </p>
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="w-full sm:w-auto">
             <Link href="/dashboard">
               Go to Dashboard
             </Link>
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Active Experiments */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Experiments</p>
@@ -63,7 +63,7 @@ export default function Home() {
 
           {/* Total Experiments */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Experiments</p>
@@ -80,7 +80,7 @@ export default function Home() {
 
           {/* Total Variations */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Variations</p>
@@ -99,7 +99,7 @@ export default function Home() {
 
           {/* Success Rate */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
@@ -146,22 +146,26 @@ export default function Home() {
               ) : (
                 <div className="space-y-4">
                   {experiments.slice(0, 3).map((experiment) => (
-                    <div key={experiment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className={`h-2 w-2 rounded-full ${experiment.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
-                        <div>
-                          <h3 className="font-medium">{experiment.name}</h3>
-                          <p className="text-sm text-muted-foreground">{experiment.description}</p>
+                    <div key={experiment.id} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className={`h-2 w-2 rounded-full flex-shrink-0 mt-2 ${experiment.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-medium truncate">{experiment.name}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{experiment.description}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge variant={experiment.isActive ? 'default' : 'secondary'}>
-                          {experiment.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {experiment.variations?.length || 0} variations
-                        </span>
-                        <Button variant="ghost" size="sm" asChild>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Badge variant={experiment.isActive ? 'default' : 'secondary'} className="text-xs">
+                            {experiment.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {experiment.variations?.length || 0} variations
+                          </span>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild className="w-full sm:w-auto">
                           <Link href={`/dashboard?experiment=${experiment.id}`}>View</Link>
                         </Button>
                       </div>
@@ -169,7 +173,7 @@ export default function Home() {
                   ))}
                   {experiments && experiments.length > 3 && (
                     <div className="text-center pt-4">
-                      <Button variant="outline" asChild>
+                      <Button variant="outline" asChild className="w-full sm:w-auto">
                         <Link href="/dashboard">View All Experiments</Link>
                       </Button>
                     </div>
@@ -181,40 +185,40 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="mt-12 lg:mt-16">
+          <h2 className="text-2xl lg:text-3xl font-bold text-center mb-8 lg:mb-12">Features</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             <Card className="text-center">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 lg:pt-6">
                 <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Easy Setup</h3>
-                <p className="text-muted-foreground">Create experiments with multiple variations and weights in minutes</p>
+                <p className="text-muted-foreground text-sm lg:text-base">Create experiments with multiple variations and weights in minutes</p>
               </CardContent>
             </Card>
             <Card className="text-center">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 lg:pt-6">
                 <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Real-time Analytics</h3>
-                <p className="text-muted-foreground">Track user behavior and conversion rates in real-time</p>
+                <p className="text-muted-foreground text-sm lg:text-base">Track user behavior and conversion rates in real-time</p>
               </CardContent>
             </Card>
             <Card className="text-center">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 lg:pt-6">
                 <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Secure & Reliable</h3>
-                <p className="text-muted-foreground">Built with TypeScript and modern security practices</p>
+                <p className="text-muted-foreground text-sm lg:text-base">Built with TypeScript and modern security practices</p>
               </CardContent>
             </Card>
           </div>

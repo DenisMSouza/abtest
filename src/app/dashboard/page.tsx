@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { StatisticalAnalysis } from '@/app/components/StatisticalAnalysis';
 
 interface Experiment {
   id: string;
@@ -41,6 +42,8 @@ interface ExperimentStats {
     weight: number;
     isBaseline: boolean;
     userCount: number;
+    successCount: number;
+    successRate: number;
     percentage: number;
   }[];
   totalUsers: number;
@@ -260,18 +263,20 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-4 lg:py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-col-reverse lg:flex-row justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">A/B Testing Dashboard</h1>
               <p className="mt-2 text-gray-600">Manage your experiments and view results</p>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/">
-                ← Back to Overview
-              </Link>
-            </Button>
+            <div className="flex w-full lg:w-auto justify-start">
+              <Button variant="outline" asChild>
+                <Link href="/">
+                  ← Back to Overview
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -487,7 +492,7 @@ export default function Dashboard() {
                   </Dialog>
                 </div>
               </div>
-              <div className="p-6">
+              <div className="p-4 lg:p-6">
                 {experiments.length === 0 ? (
                   <p className="text-gray-500">No experiments yet</p>
                 ) : (
@@ -504,19 +509,27 @@ export default function Dashboard() {
                           loadStats(experiment.id);
                         }}
                       >
-                        <h3 className="font-medium text-gray-900">{experiment.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{experiment.description}</p>
-                        <div className="flex items-center mt-2">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${experiment.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                              }`}
-                          >
-                            {experiment.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                          <span className="ml-2 text-xs text-gray-500">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">{experiment.name}</h3>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{experiment.description}</p>
+                          </div>
+                          <div className="ml-3 flex-shrink-0">
+                            <div
+                              className={`w-3 h-3 rounded-full ${experiment.isActive
+                                ? 'bg-green-500'
+                                : 'bg-gray-400'
+                                }`}
+                              title={experiment.isActive ? 'Active' : 'Inactive'}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-xs text-gray-500">
                             {experiment.variations?.length || 0} variations
+                          </span>
+                          <span className={`text-xs font-medium ${experiment.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                            {experiment.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>
@@ -532,8 +545,8 @@ export default function Dashboard() {
             {selectedExperiment ? (
               <div className="space-y-6">
                 {/* Experiment Info */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                     <h2 className="text-xl font-semibold text-gray-900">
                       {selectedExperiment.name}
                     </h2>
@@ -541,13 +554,14 @@ export default function Dashboard() {
                       <Button
                         variant="destructive"
                         onClick={() => confirmStopExperiment(selectedExperiment.id)}
+                        className="w-full sm:w-auto"
                       >
                         Stop Experiment
                       </Button>
                     )}
                   </div>
                   <p className="text-gray-600 mb-4">{selectedExperiment.description}</p>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <span className="text-sm font-medium text-gray-500">Version:</span>
                       <p className="text-gray-900">{selectedExperiment.version}</p>
@@ -566,36 +580,13 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Variations */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Variations</h3>
-                  <div className="space-y-3">
-                    {selectedExperiment.variations?.map((variation) => (
-                      <div key={variation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="font-medium text-gray-900">{variation.name}</span>
-                          {variation.isBaseline && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              Baseline
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-sm text-gray-600">{Math.round(variation.weight * 100)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Stats */}
-                {stats && (
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Statistics</h3>
-                    <div className="mb-4">
-                      <span className="text-sm font-medium text-gray-500">Total Users:</span>
-                      <span className="ml-2 text-lg font-semibold text-gray-900">{stats.totalUsers}</span>
-                    </div>
+                {/* Variations and Statistics Row */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                  {/* Variations */}
+                  <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Variations</h3>
                     <div className="space-y-3">
-                      {stats.variations?.map((variation) => (
+                      {selectedExperiment.variations?.map((variation) => (
                         <div key={variation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <span className="font-medium text-gray-900">{variation.name}</span>
@@ -605,14 +596,45 @@ export default function Dashboard() {
                               </span>
                             )}
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-gray-900">{variation.userCount} users</div>
-                            <div className="text-xs text-gray-600">{Math.round(variation.percentage)}%</div>
-                          </div>
+                          <span className="text-sm text-gray-600">{Math.round(variation.weight * 100)}%</span>
                         </div>
                       ))}
                     </div>
                   </div>
+
+                  {/* Stats */}
+                  {stats && (
+                    <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Statistics</h3>
+                      <div className="mb-4">
+                        <span className="text-sm font-medium text-gray-500">Total Users:</span>
+                        <span className="ml-2 text-lg font-semibold text-gray-900">{stats.totalUsers}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {stats.variations?.map((variation) => (
+                          <div key={variation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div>
+                              <span className="font-medium text-gray-900">{variation.name}</span>
+                              {variation.isBaseline && (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Baseline
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-gray-900">{variation.userCount} users</div>
+                              <div className="text-xs text-gray-600">{Math.round(variation.percentage)}%</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Statistical Analysis */}
+                {stats && stats.variations && stats.variations.length >= 2 && (
+                  <StatisticalAnalysis variations={stats.variations} />
                 )}
               </div>
             ) : (
