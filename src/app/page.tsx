@@ -17,9 +17,10 @@ export default function Home() {
   const loadExperiments = async () => {
     try {
       const data = await getExperiments();
-      setExperiments(data);
+      setExperiments(data || []);
     } catch (error) {
       console.error('Error loading experiments:', error);
+      setExperiments([]);
     }
   };
 
@@ -48,7 +49,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Experiments</p>
                   <p className="text-2xl font-bold">
-                    {experiments.filter(exp => exp.isActive).length}
+                    {experiments?.filter(exp => exp.isActive).length || 0}
                   </p>
                 </div>
                 <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -66,7 +67,7 @@ export default function Home() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Experiments</p>
-                  <p className="text-2xl font-bold">{experiments.length}</p>
+                  <p className="text-2xl font-bold">{experiments?.length || 0}</p>
                 </div>
                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
                   <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +85,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Variations</p>
                   <p className="text-2xl font-bold">
-                    {experiments.reduce((total, exp) => total + exp.variations.length, 0)}
+                    {experiments?.reduce((total, exp) => total + (exp.variations?.length || 0), 0) || 0}
                   </p>
                 </div>
                 <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
@@ -103,7 +104,7 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
                   <p className="text-2xl font-bold">
-                    {experiments.length > 0 ?
+                    {experiments && experiments.length > 0 ?
                       `${Math.round((experiments.filter(exp => exp.isActive).length / experiments.length) * 100)}%`
                       : '0%'
                     }
@@ -129,7 +130,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {experiments.length === 0 ? (
+              {!experiments || experiments.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                     <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,7 +159,7 @@ export default function Home() {
                           {experiment.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                          {experiment.variations.length} variations
+                          {experiment.variations?.length || 0} variations
                         </span>
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/dashboard?experiment=${experiment.id}`}>View</Link>
@@ -166,7 +167,7 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
-                  {experiments.length > 3 && (
+                  {experiments && experiments.length > 3 && (
                     <div className="text-center pt-4">
                       <Button variant="outline" asChild>
                         <Link href="/dashboard">View All Experiments</Link>

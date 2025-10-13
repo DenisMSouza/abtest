@@ -124,3 +124,29 @@ export const getExperimentStats = async (experimentId: string) => {
     throw error;
   }
 };
+
+export const trackSuccess = async (
+  experimentId: string,
+  userId: string,
+  event: string,
+  value?: number
+) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/experiments/${experimentId}/success`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, event, value }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error tracking success event:', error);
+    throw error;
+  }
+};

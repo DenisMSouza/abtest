@@ -8,6 +8,7 @@ import {
   getExperimentVariation,
   persistExperimentVariation,
   getExperimentStats,
+  trackSuccess,
 } from "../controllers/experimentController";
 
 const router = Router();
@@ -25,5 +26,8 @@ router.post("/:experimentId/variation", persistExperimentVariation);
 
 // Analytics routes
 router.get("/:id/stats", getExperimentStats);
+
+// Success tracking routes
+router.post("/:id/success", trackSuccess);
 
 export default router;

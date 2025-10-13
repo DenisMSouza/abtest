@@ -1,6 +1,12 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../config/database";
 
+export interface SuccessMetric {
+  type: "click" | "conversion" | "custom";
+  target?: string; // e.g., button ID, URL, custom event name
+  value?: number; // for custom metrics
+}
+
 export interface ExperimentAttributes {
   id: string;
   name: string;
@@ -9,6 +15,7 @@ export interface ExperimentAttributes {
   startDate?: Date;
   endDate?: Date;
   isActive: boolean;
+  successMetric?: SuccessMetric;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +34,7 @@ export class Experiment
   public startDate?: Date;
   public endDate?: Date;
   public isActive!: boolean;
+  public successMetric?: SuccessMetric;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -61,6 +69,10 @@ Experiment.init(
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    successMetric: {
+      type: DataTypes.JSON,
+      allowNull: true,
     },
     createdAt: {
       type: DataTypes.DATE,

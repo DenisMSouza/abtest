@@ -1,6 +1,7 @@
 import { Experiment } from "./Experiment";
 import { Variation } from "./Variation";
 import { UserVariation } from "./UserVariation";
+import { SuccessEvent } from "./SuccessEvent";
 
 // Define associations
 Experiment.hasMany(Variation, { foreignKey: "experimentId", as: "variations" });
@@ -27,4 +28,14 @@ UserVariation.belongsTo(Variation, {
   as: "variation",
 });
 
-export { Experiment, Variation, UserVariation };
+// SuccessEvent associations
+Experiment.hasMany(SuccessEvent, {
+  foreignKey: "experimentId",
+  as: "successEvents",
+});
+SuccessEvent.belongsTo(Experiment, {
+  foreignKey: "experimentId",
+  as: "experiment",
+});
+
+export { Experiment, Variation, UserVariation, SuccessEvent };

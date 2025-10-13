@@ -53,6 +53,11 @@ const experimentSchema = z.object({
   version: z.string().min(1, 'Version is required').max(20, 'Version must be less than 20 characters'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  successMetric: z.object({
+    type: z.enum(['click', 'conversion', 'custom']),
+    target: z.string().optional(),
+    value: z.number().optional(),
+  }).optional(),
   variations: z.array(
     z.object({
       name: z.string().min(1, 'Variation name is required').max(50, 'Variation name must be less than 50 characters'),
@@ -92,6 +97,11 @@ export default function Dashboard() {
       version: '1.0.0',
       startDate: '',
       endDate: '',
+      successMetric: {
+        type: 'click',
+        target: '',
+        value: undefined,
+      },
       variations: [
         { name: 'baseline', weight: 0.5, isBaseline: true },
         { name: 'variant', weight: 0.5, isBaseline: false },
@@ -318,6 +328,70 @@ export default function Dashboard() {
                             <p className="text-sm text-destructive">{form.formState.errors.version.message}</p>
                           )}
                         </div>
+
+                        {/* Success Metric Configuration */}
+                        <div className="space-y-4 border-t pt-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="successMetric.type">Success Metric Type</Label>
+                            <select
+                              id="successMetric.type"
+                              {...form.register('successMetric.type')}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <option value="click">Button Click</option>
+                              <option value="conversion">Page Conversion</option>
+                              <option value="custom">Custom Event</option>
+                            </select>
+                            {form.formState.errors.successMetric?.type && (
+                              <p className="text-sm text-destructive">{form.formState.errors.successMetric.type.message}</p>
+                            )}
+                          </div>
+
+                          {form.watch('successMetric.type') === 'click' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="successMetric.target">Button ID or Selector</Label>
+                              <Input
+                                id="successMetric.target"
+                                type="text"
+                                placeholder="e.g., #cta-button, .purchase-btn"
+                                {...form.register('successMetric.target')}
+                              />
+                              {form.formState.errors.successMetric?.target && (
+                                <p className="text-sm text-destructive">{form.formState.errors.successMetric.target.message}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {form.watch('successMetric.type') === 'conversion' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="successMetric.target">Conversion URL</Label>
+                              <Input
+                                id="successMetric.target"
+                                type="text"
+                                placeholder="e.g., /thank-you, /checkout/success"
+                                {...form.register('successMetric.target')}
+                              />
+                              {form.formState.errors.successMetric?.target && (
+                                <p className="text-sm text-destructive">{form.formState.errors.successMetric.target.message}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {form.watch('successMetric.type') === 'custom' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="successMetric.target">Custom Event Name</Label>
+                              <Input
+                                id="successMetric.target"
+                                type="text"
+                                placeholder="e.g., purchase_completed, user_signup"
+                                {...form.register('successMetric.target')}
+                              />
+                              {form.formState.errors.successMetric?.target && (
+                                <p className="text-sm text-destructive">{form.formState.errors.successMetric.target.message}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <Label>Variations</Label>
@@ -442,7 +516,7 @@ export default function Dashboard() {
                             {experiment.isActive ? 'Active' : 'Inactive'}
                           </span>
                           <span className="ml-2 text-xs text-gray-500">
-                            {experiment.variations.length} variations
+                            {experiment.variations?.length || 0} variations
                           </span>
                         </div>
                       </div>
@@ -496,7 +570,7 @@ export default function Dashboard() {
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Variations</h3>
                   <div className="space-y-3">
-                    {selectedExperiment.variations.map((variation) => (
+                    {selectedExperiment.variations?.map((variation) => (
                       <div key={variation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <span className="font-medium text-gray-900">{variation.name}</span>
@@ -521,7 +595,7 @@ export default function Dashboard() {
                       <span className="ml-2 text-lg font-semibold text-gray-900">{stats.totalUsers}</span>
                     </div>
                     <div className="space-y-3">
-                      {stats.variations.map((variation) => (
+                      {stats.variations?.map((variation) => (
                         <div key={variation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div>
                             <span className="font-medium text-gray-900">{variation.name}</span>

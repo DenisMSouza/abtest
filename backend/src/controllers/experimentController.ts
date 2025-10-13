@@ -1,10 +1,17 @@
 import { Request, Response } from "express";
-import { Experiment, Variation, UserVariation } from "../models";
+import { Experiment, Variation, UserVariation, SuccessEvent } from "../models";
 
 export const createExperiment = async (req: Request, res: Response) => {
   try {
-    const { name, description, version, startDate, endDate, variations } =
-      req.body;
+    const {
+      name,
+      description,
+      version,
+      startDate,
+      endDate,
+      variations,
+      successMetric,
+    } = req.body;
 
     // Validate variations weights sum to 100%
     if (variations && variations.length > 0) {
@@ -29,6 +36,7 @@ export const createExperiment = async (req: Request, res: Response) => {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       isActive: true,
+      successMetric: successMetric || null,
     });
 
     // Create variations
@@ -58,6 +66,8 @@ export const createExperiment = async (req: Request, res: Response) => {
 
 export const getExperiments = async (req: Request, res: Response) => {
   try {
+    console.log("Starting getExperiments...");
+
     const experiments = await Experiment.findAll({
       include: [{ model: Variation, as: "variations" }],
       order: [["createdAt", "DESC"]],
@@ -81,9 +91,13 @@ export const getExperiments = async (req: Request, res: Response) => {
       }
     );
 
+    console.log("Found experiments:", experimentsWithCalculatedActive.length);
+
     res.json(experimentsWithCalculatedActive);
   } catch (error) {
     console.error("Error fetching experiments:", error);
+    console.error("Error details:", (error as Error).message);
+    console.error("Error stack:", (error as Error).stack);
     res.status(500).json({ error: "Failed to fetch experiments" });
   }
 };
@@ -272,27 +286,57 @@ export const getExperimentStats = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Experiment not found" });
     }
 
+    // Get all success events for this experiment
+    const successEvents = await SuccessEvent.findAll({
+      where: {
+        experimentId: id,
+      },
+    });
+
     const variations = (experiment as any).variations || [];
-    const stats = variations.map((variation: any) => ({
-      id: variation.id,
-      name: variation.name,
-      weight: variation.weight,
-      isBaseline: variation.isBaseline,
-      userCount: variation.userVariations?.length || 0,
-      percentage:
-        variations.reduce(
-          (total: number, v: any) => total + (v.userVariations?.length || 0),
-          0
-        ) > 0
-          ? ((variation.userVariations?.length || 0) /
-              variations.reduce(
-                (total: number, v: any) =>
-                  total + (v.userVariations?.length || 0),
-                0
-              )) *
-            100
-          : 0,
-    }));
+    const stats = await Promise.all(
+      variations.map(async (variation: any) => {
+        const userIds =
+          variation.userVariations?.map((uv: any) => uv.userId) || [];
+        const successCount = successEvents.filter((se) =>
+          userIds.includes(se.userId)
+        ).length;
+
+        const uniqueSuccessUsers = new Set(
+          successEvents
+            .filter((se) => userIds.includes(se.userId))
+            .map((se) => se.userId)
+        ).size;
+
+        const userCount = variation.userVariations?.length || 0;
+        const successRate =
+          userCount > 0 ? (uniqueSuccessUsers / userCount) * 100 : 0;
+
+        return {
+          id: variation.id,
+          name: variation.name,
+          weight: variation.weight,
+          isBaseline: variation.isBaseline,
+          userCount: userCount,
+          successCount: uniqueSuccessUsers,
+          successRate: Math.round(successRate * 100) / 100, // Round to 2 decimal places
+          percentage:
+            variations.reduce(
+              (total: number, v: any) =>
+                total + (v.userVariations?.length || 0),
+              0
+            ) > 0
+              ? (userCount /
+                  variations.reduce(
+                    (total: number, v: any) =>
+                      total + (v.userVariations?.length || 0),
+                    0
+                  )) *
+                100
+              : 0,
+        };
+      })
+    );
 
     // Calculate isActive based on current date and endDate
     const now = new Date();
@@ -309,15 +353,76 @@ export const getExperimentStats = async (req: Request, res: Response) => {
         name: experiment.name,
         description: experiment.description,
         isActive: isActive,
+        successMetric: experiment.successMetric,
       },
       variations: stats,
       totalUsers: variations.reduce(
         (total: number, v: any) => total + (v.userVariations?.length || 0),
         0
       ),
+      totalSuccessEvents: successEvents.length,
     });
   } catch (error) {
     console.error("Error fetching experiment stats:", error);
     res.status(500).json({ error: "Failed to fetch experiment stats" });
+  }
+};
+
+export const trackSuccess = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { userId, event, value } = req.body;
+
+    // Validate required fields
+    if (!userId || !event) {
+      return res.status(400).json({
+        error: "userId and event are required",
+      });
+    }
+
+    // Check if experiment exists
+    const experiment = await Experiment.findByPk(id);
+    if (!experiment) {
+      return res.status(404).json({ error: "Experiment not found" });
+    }
+
+    // Check if user has a variation for this experiment
+    const userVariation = await UserVariation.findOne({
+      where: {
+        experimentId: id,
+        userId: userId,
+      } as any,
+    });
+
+    if (!userVariation) {
+      return res.status(400).json({
+        error:
+          "User not found in experiment. User must be assigned to a variation first.",
+      });
+    }
+
+    // Create success event
+    const successEvent = await SuccessEvent.create({
+      experimentId: id,
+      userId: userId,
+      event: event,
+      value: value || null,
+      timestamp: new Date(),
+    });
+
+    res.status(201).json({
+      message: "Success event tracked",
+      successEvent: {
+        id: successEvent.id,
+        experimentId: successEvent.experimentId,
+        userId: successEvent.userId,
+        event: successEvent.event,
+        value: successEvent.value,
+        timestamp: successEvent.timestamp,
+      },
+    });
+  } catch (error) {
+    console.error("Error tracking success event:", error);
+    res.status(500).json({ error: "Failed to track success event" });
   }
 };
