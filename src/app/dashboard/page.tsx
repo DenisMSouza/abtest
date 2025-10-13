@@ -76,6 +76,13 @@ const experimentSchema = z.object({
     }, {
       message: 'Variation weights must sum to 100% (1.0)',
       path: ['variations'],
+    })
+    .refine((variations) => {
+      const baselineCount = variations.filter(v => v.isBaseline).length;
+      return baselineCount === 1;
+    }, {
+      message: 'Exactly one variation must be set as baseline',
+      path: ['variations'],
     }),
 });
 
@@ -180,13 +187,30 @@ export default function Dashboard() {
   };
 
   const removeVariation = (index: number) => {
+    const variations = form.getValues('variations');
+    const isRemovingBaseline = variations[index]?.isBaseline;
+
     remove(index);
+
+    // If we removed the baseline variation, set the first remaining variation as baseline
+    if (isRemovingBaseline && variations.length > 1) {
+      setTimeout(() => {
+        const remainingVariations = form.getValues('variations');
+        if (remainingVariations.length > 0) {
+          form.setValue(`variations.0.isBaseline`, true, {
+            shouldValidate: true,
+            shouldDirty: true
+          });
+        }
+      }, 0);
+    }
 
     // Auto-balance weights after removing a variation
     setTimeout(() => {
       autoBalanceWeights();
     }, 0);
   };
+
 
   const autoBalanceWeights = () => {
     const currentVariations = form.getValues('variations');
@@ -226,6 +250,27 @@ export default function Dashboard() {
     const clampedValue = Math.min(numericValue, maxAllowed);
 
     form.setValue(`variations.${index}.weight`, clampedValue / 100, {
+      shouldValidate: true,
+      shouldDirty: true
+    });
+  };
+
+  const handleBaselineChange = (index: number, isChecked: boolean) => {
+    if (isChecked) {
+      // If this variation is being set as baseline, uncheck all others
+      const variations = form.getValues('variations');
+      variations.forEach((_, i) => {
+        if (i !== index) {
+          form.setValue(`variations.${i}.isBaseline`, false, {
+            shouldValidate: true,
+            shouldDirty: true
+          });
+        }
+      });
+    }
+
+    // Set the current variation's baseline status
+    form.setValue(`variations.${index}.isBaseline`, isChecked, {
       shouldValidate: true,
       shouldDirty: true
     });
@@ -443,7 +488,8 @@ export default function Dashboard() {
                               <Label className="flex items-center space-x-1">
                                 <input
                                   type="checkbox"
-                                  {...form.register(`variations.${index}.isBaseline`)}
+                                  checked={form.watch(`variations.${index}.isBaseline`)}
+                                  onChange={(e) => handleBaselineChange(index, e.target.checked)}
                                   className="rounded border-gray-300"
                                 />
                                 <span className="text-sm">Baseline</span>
