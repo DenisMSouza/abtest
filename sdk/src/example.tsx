@@ -1,5 +1,5 @@
 import React from 'react';
-import { useExperiment, ABTestConfig, Experiment } from './index';
+import { useExperiment, ABTestConfig } from './index';
 
 // Example configuration
 const config: ABTestConfig = {
@@ -11,30 +11,19 @@ const config: ABTestConfig = {
   timeout: 5000,
 };
 
-// Example experiment
-const experiment: Experiment = {
-  id: 'button-color-test',
-  name: 'Button Color Test',
-  variations: [
-    { name: 'blue', weight: 0.5, isBaseline: true },
-    { name: 'red', weight: 0.5 },
-  ],
-  description: 'Test different button colors to improve conversion',
-  startDate: '2024-01-01T00:00:00Z',
-  endDate: '2024-12-31T23:59:59Z',
-};
-
 // Example component
 export const ButtonExperiment: React.FC = () => {
+  // Simply provide the experiment ID - the hook will fetch experiment details automatically
   const {
     variation,
+    experiment,
     isLoading,
     error,
     source,
     isActive,
     trackSuccess,
     trackEvent
-  } = useExperiment(experiment, config);
+  } = useExperiment('button-color-test', config); // Experiment ID from your dashboard
 
   const handleClick = async () => {
     // Track success event
@@ -73,9 +62,12 @@ export const ButtonExperiment: React.FC = () => {
 
   return (
     <div>
-      <h3>Button Color Experiment</h3>
+      <h3>{experiment?.name || 'Button Color Experiment'}</h3>
+      <p>Experiment ID: {experiment?.id}</p>
+      <p>Description: {experiment?.description}</p>
       <p>Variation: {variation}</p>
       <p>Source: {source}</p>
+      <p>Active: {isActive ? 'Yes' : 'No'}</p>
       <button style={buttonStyle} onClick={handleClick}>
         Click me! ({variation})
       </button>
@@ -85,16 +77,7 @@ export const ButtonExperiment: React.FC = () => {
 
 // Example with multiple experiments
 export const MultiExperimentExample: React.FC = () => {
-  const headerExperiment: Experiment = {
-    id: 'header-test',
-    name: 'Header Test',
-    variations: [
-      { name: 'original', weight: 0.5, isBaseline: true },
-      { name: 'new', weight: 0.5 },
-    ],
-  };
-
-  const { variation: headerVariation } = useExperiment(headerExperiment, config);
+  const { variation: headerVariation } = useExperiment('header-test', config);
 
   return (
     <div>

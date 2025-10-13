@@ -21,6 +21,7 @@ export interface LogEntry {
   requestId?: string;
   userId?: string;
   experimentId?: string;
+  [key: string]: any; // Allow additional properties
 }
 
 export class Logger {
@@ -231,16 +232,30 @@ export const requestLogger = (req: any, res: any, next: any) => {
     const duration = Date.now() - start;
     const level = res.statusCode >= 400 ? "error" : "info";
 
-    logger[level](
-      "Request completed",
-      {
-        method: req.method,
-        url: req.url,
-        statusCode: res.statusCode,
-        duration: `${duration}ms`,
-      },
-      { requestId }
-    );
+    if (level === "error") {
+      logger.error(
+        "Request completed",
+        undefined,
+        {
+          method: req.method,
+          url: req.url,
+          statusCode: res.statusCode,
+          duration: `${duration}ms`,
+        },
+        { requestId }
+      );
+    } else {
+      logger.info(
+        "Request completed",
+        {
+          method: req.method,
+          url: req.url,
+          statusCode: res.statusCode,
+          duration: `${duration}ms`,
+        },
+        { requestId }
+      );
+    }
   });
 
   next();

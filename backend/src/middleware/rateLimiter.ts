@@ -97,7 +97,7 @@ class RateLimiter {
             method: req.method,
             url: req.url,
           },
-          { requestId: req.requestId }
+          { requestId: (req as any).requestId }
         );
 
         throw new RateLimitError(message);

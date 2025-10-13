@@ -51,6 +51,7 @@ export interface ExperimentState {
     | "fallback"
     | null;
   isActive: boolean;
+  experiment: Experiment | null;
   metadata?: {
     version?: string;
     description?: string;
@@ -70,6 +71,8 @@ export interface UseExperimentResult {
   source: ExperimentState["source"];
   /** Whether the experiment is active */
   isActive: boolean;
+  /** Experiment data */
+  experiment: Experiment | null;
   /** Experiment metadata */
   metadata?: ExperimentState["metadata"];
   /** Track a success event for this experiment */

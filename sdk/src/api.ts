@@ -170,10 +170,14 @@ export class ABTestAPI {
     try {
       await this.client.fetch(url, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           userId: this.config.userId,
           sessionId: this.config.sessionId,
-          eventData,
+          event: eventData?.event || "success", // Default event name
+          value: eventData?.value || 1, // Default value
         }),
       });
     } catch (error) {

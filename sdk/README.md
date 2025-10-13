@@ -43,19 +43,12 @@ import React from "react";
 import { useExperiment } from "@abtest/sdk";
 
 const ButtonExperiment = () => {
-  const experiment = {
-    id: "button-color-test",
-    name: "Button Color Test",
-    variations: [
-      { name: "blue", weight: 0.5, isBaseline: true },
-      { name: "red", weight: 0.5 },
-    ],
-  };
-
-  const { variation, isLoading, error, trackSuccess } = useExperiment(
-    experiment,
-    config
-  );
+  // Simply provide the experiment ID - the hook will fetch experiment details automatically
+  const { variation, isLoading, error, trackSuccess, experiment } =
+    useExperiment(
+      "button-color-test", // Experiment ID from your dashboard
+      config
+    );
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;

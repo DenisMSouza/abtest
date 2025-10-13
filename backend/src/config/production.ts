@@ -1,7 +1,7 @@
-import { SequelizeOptions } from "sequelize";
+import { Options } from "sequelize";
 
 export interface ProductionConfig {
-  database: SequelizeOptions;
+  database: Options;
   server: {
     port: number;
     host: string;
