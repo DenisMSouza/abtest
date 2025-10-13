@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import sequelize from "./config/database";
 import experimentRoutes from "./routes/experiments";
+import publicRoutes from "./routes/public";
 
 dotenv.config();
 
@@ -14,7 +15,11 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use("/api/experiments", experimentRoutes);
+// Public API (for external developers using the SDK)
+app.use("/api", publicRoutes);
+
+// Internal API (for dashboard and admin)
+app.use("/api/internal/experiments", experimentRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

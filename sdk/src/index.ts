@@ -1,5 +1,7 @@
 // Main exports
 export { useExperiment } from "./useExperiment";
+
+// Public API exports (for advanced users)
 export { ABTestAPI } from "./api";
 
 // Type exports

@@ -8,6 +8,10 @@
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "seed": "npx ts-node scripts/seed.ts",
+    "migrate": "npx ts-node scripts/migrate.ts",
+    "migrate:up": "npx ts-node scripts/migrate.ts up",
+    "migrate:down": "npx ts-node scripts/migrate.ts down",
+    "migrate:status": "npx ts-node scripts/migrate.ts status",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

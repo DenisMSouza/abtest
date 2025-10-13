@@ -13,21 +13,22 @@ import {
 
 const router = Router();
 
-// Experiment CRUD routes
+// ===== PUBLIC API (for developers using the SDK) =====
+// These endpoints are exposed to external developers
+router.get("/:id", getExperiment); // Get experiment details
+router.post("/:id/success", trackSuccess); // Track success events
+
+// ===== INTERNAL API (for dashboard and admin) =====
+// These endpoints are for internal use only
 router.post("/", createExperiment);
 router.get("/", getExperiments);
-router.get("/:id", getExperiment);
 router.put("/:id", updateExperiment);
 router.delete("/:id", deleteExperiment);
-
-// Experiment variation routes
-router.get("/:experimentId/variation", getExperimentVariation);
-router.post("/:experimentId/variation", persistExperimentVariation);
-
-// Analytics routes
 router.get("/:id/stats", getExperimentStats);
 
-// Success tracking routes
-router.post("/:id/success", trackSuccess);
+// ===== SDK INTERNAL API (for the useExperiment hook) =====
+// These endpoints are used internally by the SDK
+router.get("/:experimentId/variation", getExperimentVariation);
+router.post("/:experimentId/variation", persistExperimentVariation);
 
 export default router;

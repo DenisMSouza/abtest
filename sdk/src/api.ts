@@ -14,7 +14,7 @@ export class ABTestAPI {
   }
 
   /**
-   * Get user's variation for an experiment
+   * Get user's variation for an experiment (internal SDK use)
    */
   async getExperimentVariation(
     experimentId: string
@@ -136,7 +136,8 @@ export class ABTestAPI {
   }
 
   /**
-   * Get experiment details
+   * Get experiment details (public API)
+   * This is the only method external developers should use directly
    */
   async getExperiment(experimentId: string): Promise<any> {
     const url = `${this.config.apiUrl}/experiments/${experimentId}`;
@@ -147,6 +148,40 @@ export class ABTestAPI {
       return await response.json();
     } catch (error) {
       errorLog(this.config, `Failed to get experiment ${experimentId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Track success event (public API)
+   * This is the only method external developers should use directly
+   */
+  async trackSuccessEvent(
+    experimentId: string,
+    eventData?: Record<string, any>
+  ): Promise<void> {
+    const url = `${this.config.apiUrl}/experiments/${experimentId}/success`;
+    debugLog(
+      this.config,
+      `Tracking success for experiment ${experimentId}`,
+      eventData
+    );
+
+    try {
+      await this.client.fetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+          userId: this.config.userId,
+          sessionId: this.config.sessionId,
+          eventData,
+        }),
+      });
+    } catch (error) {
+      errorLog(
+        this.config,
+        `Failed to track success for experiment ${experimentId}`,
+        error
+      );
       throw error;
     }
   }

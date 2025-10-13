@@ -96,8 +96,10 @@ export const getExperiments = async (req: Request, res: Response) => {
     res.json(experimentsWithCalculatedActive);
   } catch (error) {
     console.error("Error fetching experiments:", error);
-    console.error("Error details:", (error as Error).message);
-    console.error("Error stack:", (error as Error).stack);
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     res.status(500).json({ error: "Failed to fetch experiments" });
   }
 };
