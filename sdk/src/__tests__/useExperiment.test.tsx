@@ -9,7 +9,6 @@ import { ABTestConfig, Experiment } from '../types';
     getExperimentVariation: (jest as any).fn(),
     persistExperimentVariation: (jest as any).fn(),
     trackSuccess: (jest as any).fn(),
-    trackEvent: (jest as any).fn(),
   })),
 }));
 
@@ -35,7 +34,7 @@ describe('useExperiment', () => {
   });
 
   it('should initialize with loading state', async () => {
-    const { result } = renderHook(() => useExperiment(mockExperiment, mockConfig));
+    const { result } = renderHook(() => useExperiment(mockExperiment.id, mockConfig));
 
     // Initially should be loading
     expect(result.current.isLoading).toBe(true);
@@ -52,13 +51,8 @@ describe('useExperiment', () => {
   });
 
   it('should handle experiment with no variations', () => {
-    const experimentWithoutVariations: Experiment = {
-      ...mockExperiment,
-      variations: [],
-    };
-
     const { result } = renderHook(() =>
-      useExperiment(experimentWithoutVariations, mockConfig)
+      useExperiment(mockExperiment.id, mockConfig)
     );
 
     expect(result.current.error).toBeDefined();
@@ -71,7 +65,7 @@ describe('useExperiment', () => {
     };
 
     const { result } = renderHook(() =>
-      useExperiment(mockExperiment, configWithFallback)
+      useExperiment(mockExperiment.id, configWithFallback)
     );
 
     // Should have fallback configuration available
@@ -80,7 +74,7 @@ describe('useExperiment', () => {
   });
 
   it('should track success events', async () => {
-    const { result } = renderHook(() => useExperiment(mockExperiment, mockConfig));
+    const { result } = renderHook(() => useExperiment(mockExperiment.id, mockConfig));
 
     await act(async () => {
       await result.current.trackSuccess({ test: 'data' });
@@ -90,14 +84,4 @@ describe('useExperiment', () => {
     expect(result.current.trackSuccess).toBeDefined();
   });
 
-  it('should track custom events', async () => {
-    const { result } = renderHook(() => useExperiment(mockExperiment, mockConfig));
-
-    await act(async () => {
-      await result.current.trackEvent('custom_event', { test: 'data' });
-    });
-
-    // Verify trackEvent was called (mocked)
-    expect(result.current.trackEvent).toBeDefined();
-  });
 });

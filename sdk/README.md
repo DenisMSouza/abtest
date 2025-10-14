@@ -89,7 +89,6 @@ The main hook for A/B testing.
 - **isActive** (`boolean`): Whether the experiment is active
 - **metadata** (`object`): Experiment metadata
 - **trackSuccess** (`function`): Track a success event
-- **trackEvent** (`function`): Track a custom event
 
 ### `ABTestConfig`
 
@@ -160,10 +159,12 @@ await trackSuccess({
 ### Track Custom Events
 
 ```typescript
-const { trackEvent } = useExperiment(experiment, config);
+const { trackSuccess } = useExperiment(experiment, config);
 
-// Track a custom event
-await trackEvent("page_view", {
+// Track a custom event as a success event
+await trackSuccess({
+  event: "page_view",
+  value: 1,
   page: "/checkout",
   timeOnPage: 120,
 });

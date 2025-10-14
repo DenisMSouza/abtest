@@ -32,8 +32,8 @@ export function StatisticalAnalysis({ variations }: StatisticalAnalysisProps) {
   }
 
   // For now, compare the first two variations (baseline vs first variation)
-  const baseline = variations.find(v => v.name.toLowerCase() === 'baseline') || variations[0];
-  const testVariation = variations.find(v => v.name.toLowerCase() !== 'baseline') || variations[1];
+  const baseline = variations.find(v => v.isBaseline) || variations[0];
+  const testVariation = variations.find(v => !v.isBaseline) || variations[1];
 
   const variationA: VariationStats = {
     name: baseline.name,

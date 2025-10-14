@@ -19,7 +19,19 @@ export class ABTestAPI {
   async getExperimentVariation(
     experimentId: string
   ): Promise<BackendVariation[]> {
-    const url = `${this.config.apiUrl}/experiments/${experimentId}/variation`;
+    // Use internal API for SDK internal operations
+    const internalApiUrl = this.config.apiUrl.replace(
+      "/api",
+      "/api/internal/experiments"
+    );
+
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (this.config.userId) params.append("userId", this.config.userId);
+    if (this.config.sessionId)
+      params.append("sessionId", this.config.sessionId);
+
+    const url = `${internalApiUrl}/${experimentId}/variation?${params.toString()}`;
     debugLog(this.config, `Getting variation for experiment ${experimentId}`);
 
     try {
@@ -42,7 +54,19 @@ export class ABTestAPI {
     experimentId: string,
     variation: string
   ): Promise<void> {
-    const url = `${this.config.apiUrl}/experiments/${experimentId}/variation`;
+    // Use internal API for SDK internal operations
+    const internalApiUrl = this.config.apiUrl.replace(
+      "/api",
+      "/api/internal/experiments"
+    );
+
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (this.config.userId) params.append("userId", this.config.userId);
+    if (this.config.sessionId)
+      params.append("sessionId", this.config.sessionId);
+
+    const url = `${internalApiUrl}/${experimentId}/variation?${params.toString()}`;
     debugLog(
       this.config,
       `Persisting variation ${variation} for experiment ${experimentId}`
@@ -51,10 +75,12 @@ export class ABTestAPI {
     try {
       await this.client.fetch(url, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
+          experimentId,
           variation,
-          userId: this.config.userId,
-          sessionId: this.config.sessionId,
         }),
       });
     } catch (error) {
@@ -84,51 +110,19 @@ export class ABTestAPI {
     try {
       await this.client.fetch(url, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           userId: this.config.userId,
-          sessionId: this.config.sessionId,
-          eventData,
+          event: eventData?.event || "success", // Default event name
+          value: eventData?.value || 1, // Default value
         }),
       });
     } catch (error) {
       errorLog(
         this.config,
         `Failed to track success for experiment ${experimentId}`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Track a custom event
-   */
-  async trackEvent(
-    experimentId: string,
-    eventName: string,
-    eventData?: Record<string, any>
-  ): Promise<void> {
-    const url = `${this.config.apiUrl}/experiments/${experimentId}/events`;
-    debugLog(
-      this.config,
-      `Tracking event ${eventName} for experiment ${experimentId}`,
-      eventData
-    );
-
-    try {
-      await this.client.fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          eventName,
-          userId: this.config.userId,
-          sessionId: this.config.sessionId,
-          eventData,
-        }),
-      });
-    } catch (error) {
-      errorLog(
-        this.config,
-        `Failed to track event ${eventName} for experiment ${experimentId}`,
         error
       );
       throw error;
@@ -175,7 +169,6 @@ export class ABTestAPI {
         },
         body: JSON.stringify({
           userId: this.config.userId,
-          sessionId: this.config.sessionId,
           event: eventData?.event || "success", // Default event name
           value: eventData?.value || 1, // Default value
         }),

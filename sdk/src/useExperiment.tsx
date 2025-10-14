@@ -174,7 +174,28 @@ export const useExperiment = (
   experimentId: string,
   config: ABTestConfig
 ): UseExperimentResult => {
-  const api = useMemo(() => new ABTestAPI(config), [config]);
+  // Create a stable config object to prevent infinite loops
+  const stableConfig = useMemo(() => ({
+    apiUrl: config.apiUrl,
+    userId: config.userId,
+    sessionId: config.sessionId,
+    debug: config.debug,
+    fallback: config.fallback,
+    timeout: config.timeout,
+    environment: config.environment,
+    randomFn: config.randomFn,
+  }), [
+    config.apiUrl,
+    config.userId,
+    config.sessionId,
+    config.debug,
+    config.fallback,
+    config.timeout,
+    config.environment,
+    config.randomFn
+  ]);
+
+  const api = useMemo(() => new ABTestAPI(stableConfig), [stableConfig]);
 
   const [state, dispatch] = useReducer(experimentReducer, {
     variation: null,
@@ -192,106 +213,15 @@ export const useExperiment = (
         const userVariation = await api.getExperimentVariation(experiment.id);
         if (!userVariation?.[0]) {
           await api.persistExperimentVariation(experiment.id, variation);
-          debugLog(config, `Persisted variation ${variation} for experiment ${experiment.id}`);
+          debugLog(stableConfig, `Persisted variation ${variation} for experiment ${experiment.id}`);
         }
       } catch (err) {
-        handleExperimentError(dispatch, err, config, config.fallback);
+        handleExperimentError(dispatch, err, stableConfig, stableConfig.fallback);
       }
     },
-    [api, config]
+    [api, stableConfig]
   );
 
-  const createNewVariation = useCallback(
-    async (loggedIn: boolean = true) => {
-      if (!state.experiment) return;
-
-      if (handleInactiveExperiment(state.experiment, dispatch, config)) {
-        return;
-      }
-
-      const variation = getWeightedVariation(state.experiment.variations, config.randomFn);
-      localStorage.setItem(getExpId(state.experiment.id), variation);
-      dispatch({
-        type: 'SET_VARIATION',
-        payload: {
-          variation,
-          source: 'generated',
-          metadata: constructMetadata(state.experiment),
-        },
-      });
-
-      debugLog(config, `Generated new variation ${variation} for experiment ${state.experiment.id}`);
-
-      if (loggedIn) {
-        await saveVariation(state.experiment, variation);
-      }
-    },
-    [state.experiment, saveVariation, config]
-  );
-
-  const loadVariationFromBackend = useCallback(async () => {
-    if (!state.experiment) return;
-
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const userVariations = await api.getExperimentVariation(state.experiment.id);
-      if (userVariations?.[0]) {
-        const backendVariationObject = userVariations[0] as BackendVariation;
-        const variationName = backendVariationObject.variation;
-        localStorage.setItem(getExpId(state.experiment.id), variationName);
-        dispatch({
-          type: 'SET_VARIATION',
-          payload: {
-            variation: variationName,
-            source: 'backend',
-            metadata: constructMetadata(state.experiment),
-          },
-        });
-        debugLog(config, `Loaded variation ${variationName} from backend for experiment ${state.experiment.id}`);
-      } else {
-        await createNewVariation(true);
-      }
-    } catch (error) {
-      handleExperimentError(dispatch, error, config, config.fallback);
-    }
-  }, [state.experiment, createNewVariation, api, config]);
-
-  const handleCookieVariation = useCallback(
-    (cookieVariation: string) => {
-      if (!state.experiment) return;
-
-      localStorage.setItem(getExpId(state.experiment.id), cookieVariation);
-      dispatch({
-        type: 'SET_VARIATION',
-        payload: {
-          variation: cookieVariation,
-          source: 'cookie',
-          metadata: constructMetadata(state.experiment),
-        },
-      });
-      debugLog(config, `Using variation ${cookieVariation} from cookie for experiment ${state.experiment.id}`);
-      saveVariation(state.experiment, cookieVariation);
-    },
-    [state.experiment, saveVariation, config]
-  );
-
-  const handleLocalStorageVariation = useCallback(
-    (localVariation: string) => {
-      if (!state.experiment) return;
-
-      dispatch({
-        type: 'SET_VARIATION',
-        payload: {
-          variation: localVariation,
-          source: 'localStorage',
-          metadata: constructMetadata(state.experiment),
-        },
-      });
-      debugLog(config, `Using variation ${localVariation} from localStorage for experiment ${state.experiment.id}`);
-      saveVariation(state.experiment, localVariation);
-    },
-    [state.experiment, saveVariation, config]
-  );
 
   const trackSuccess = useCallback(
     async (eventData?: Record<string, any>) => {
@@ -299,45 +229,32 @@ export const useExperiment = (
 
       try {
         await api.trackSuccess(state.experiment.id, eventData);
-        debugLog(config, `Tracked success for experiment ${state.experiment.id}`, eventData);
+        debugLog(stableConfig, `Tracked success for experiment ${state.experiment.id}`, eventData);
       } catch (error) {
-        errorLog(config, `Failed to track success for experiment ${state.experiment.id}`, error);
+        errorLog(stableConfig, `Failed to track success for experiment ${state.experiment.id}`, error);
       }
     },
-    [state.experiment, state.variation, api, config]
+    [state.experiment, state.variation, api, stableConfig]
   );
 
-  const trackEvent = useCallback(
-    async (eventName: string, eventData?: Record<string, any>) => {
-      if (!state.experiment || !state.variation) return;
-
-      try {
-        await api.trackEvent(state.experiment.id, eventName, eventData);
-        debugLog(config, `Tracked event ${eventName} for experiment ${state.experiment.id}`, eventData);
-      } catch (error) {
-        errorLog(config, `Failed to track event ${eventName} for experiment ${state.experiment.id}`, error);
-      }
-    },
-    [state.experiment, state.variation, api, config]
-  );
 
   useEffect(() => {
     const fetchExperiment = async () => {
       try {
-        debugLog(config, `Fetching experiment ${experimentId}`);
+        debugLog(stableConfig, `Fetching experiment ${experimentId}`);
         const experiment = await api.getExperiment(experimentId);
         dispatch({ type: 'SET_EXPERIMENT', payload: experiment });
 
         // Now handle variation assignment
         await syncExperiment(experiment);
       } catch (error) {
-        errorLog(config, `Failed to fetch experiment ${experimentId}`, error);
+        errorLog(stableConfig, `Failed to fetch experiment ${experimentId}`, error);
         dispatch({ type: 'SET_ERROR', payload: error as Error });
       }
     };
 
     const syncExperiment = async (experiment: Experiment) => {
-      if (handleInactiveExperiment(experiment, dispatch, config)) {
+      if (handleInactiveExperiment(experiment, dispatch, stableConfig)) {
         return;
       }
 
@@ -346,13 +263,79 @@ export const useExperiment = (
       const localVariation = localStorage.getItem(expId);
 
       if (cookieVariation) {
-        handleCookieVariation(cookieVariation);
+        // Handle cookie variation directly
+        localStorage.setItem(getExpId(experiment.id), cookieVariation);
+        dispatch({
+          type: 'SET_VARIATION',
+          payload: {
+            variation: cookieVariation,
+            source: 'cookie',
+            metadata: constructMetadata(experiment),
+          },
+        });
+        debugLog(stableConfig, `Using variation ${cookieVariation} from cookie for experiment ${experiment.id}`);
+        await saveVariation(experiment, cookieVariation);
       } else if (localVariation) {
-        handleLocalStorageVariation(localVariation);
-      } else if (config.userId) {
-        await loadVariationFromBackend();
+        // Handle localStorage variation directly
+        dispatch({
+          type: 'SET_VARIATION',
+          payload: {
+            variation: localVariation,
+            source: 'localStorage',
+            metadata: constructMetadata(experiment),
+          },
+        });
+        debugLog(stableConfig, `Using variation ${localVariation} from localStorage for experiment ${experiment.id}`);
+        await saveVariation(experiment, localVariation);
+      } else if (stableConfig.userId) {
+        // Load from backend
+        dispatch({ type: 'SET_LOADING', payload: true });
+        try {
+          const userVariations = await api.getExperimentVariation(experiment.id);
+          if (userVariations?.[0]) {
+            const backendVariationObject = userVariations[0] as BackendVariation;
+            const variationName = backendVariationObject.variation;
+            localStorage.setItem(getExpId(experiment.id), variationName);
+            dispatch({
+              type: 'SET_VARIATION',
+              payload: {
+                variation: variationName,
+                source: 'backend',
+                metadata: constructMetadata(experiment),
+              },
+            });
+            debugLog(stableConfig, `Loaded variation ${variationName} from backend for experiment ${experiment.id}`);
+          } else {
+            // Create new variation
+            const variation = getWeightedVariation(experiment.variations, stableConfig.randomFn);
+            localStorage.setItem(getExpId(experiment.id), variation);
+            dispatch({
+              type: 'SET_VARIATION',
+              payload: {
+                variation,
+                source: 'generated',
+                metadata: constructMetadata(experiment),
+              },
+            });
+            debugLog(stableConfig, `Generated new variation ${variation} for experiment ${experiment.id}`);
+            await saveVariation(experiment, variation);
+          }
+        } catch (error) {
+          handleExperimentError(dispatch, error, stableConfig, stableConfig.fallback);
+        }
       } else {
-        await createNewVariation(false);
+        // Create new variation without login
+        const variation = getWeightedVariation(experiment.variations, stableConfig.randomFn);
+        localStorage.setItem(getExpId(experiment.id), variation);
+        dispatch({
+          type: 'SET_VARIATION',
+          payload: {
+            variation,
+            source: 'generated',
+            metadata: constructMetadata(experiment),
+          },
+        });
+        debugLog(stableConfig, `Generated new variation ${variation} for experiment ${experiment.id}`);
       }
     };
 
@@ -361,15 +344,7 @@ export const useExperiment = (
     return () => {
       dispatch({ type: 'RESET' });
     };
-  }, [
-    experimentId,
-    api,
-    config,
-    createNewVariation,
-    loadVariationFromBackend,
-    handleCookieVariation,
-    handleLocalStorageVariation,
-  ]);
+  }, [experimentId, stableConfig]);
 
   return {
     variation: state.variation,
@@ -380,6 +355,5 @@ export const useExperiment = (
     experiment: state.experiment,
     metadata: state.metadata,
     trackSuccess,
-    trackEvent,
   };
 };

@@ -21,21 +21,16 @@ export const ButtonExperiment: React.FC = () => {
     error,
     source,
     isActive,
-    trackSuccess,
-    trackEvent
+    trackSuccess
   } = useExperiment('button-color-test', config); // Experiment ID from your dashboard
 
   const handleClick = async () => {
     // Track success event
     await trackSuccess({
+      event: 'button_click',
+      value: 1,
       buttonColor: variation,
       timestamp: new Date().toISOString()
-    });
-
-    // Track custom event
-    await trackEvent('button_click', {
-      variation,
-      source
     });
   };
 

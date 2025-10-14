@@ -77,11 +77,6 @@ export interface UseExperimentResult {
   metadata?: ExperimentState["metadata"];
   /** Track a success event for this experiment */
   trackSuccess: (eventData?: Record<string, any>) => Promise<void>;
-  /** Track a custom event for this experiment */
-  trackEvent: (
-    eventName: string,
-    eventData?: Record<string, any>
-  ) => Promise<void>;
 }
 
 export interface BackendVariation {
