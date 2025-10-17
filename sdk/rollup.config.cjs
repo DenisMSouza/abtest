@@ -20,6 +20,16 @@ module.exports = [
         format: "esm",
         sourcemap: true,
       },
+      {
+        file: "dist/abtest-sdk.umd.js",
+        format: "umd",
+        name: "ABTestSDK",
+        sourcemap: true,
+        globals: {
+          react: "React",
+          "react-dom": "ReactDOM",
+        },
+      },
     ],
     plugins: [
       peerDepsExternal(),

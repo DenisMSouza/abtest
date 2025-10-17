@@ -12,6 +12,7 @@ A production-ready React hook for A/B testing with your self-hosted A/B testing 
 - 📱 **React Native Compatible**: Works in both web and mobile environments
 - 🛡️ **TypeScript**: Full type safety and IntelliSense support
 - 🐛 **Debug Mode**: Comprehensive logging for development
+- 🔐 **Login Sync**: Automatically syncs variations when users log in after being assigned a variation
 
 ## Installation
 
@@ -168,6 +169,32 @@ await trackSuccess({
   page: "/checkout",
   timeOnPage: 120,
 });
+```
+
+## Login Sync
+
+The SDK automatically handles the scenario where a user visits a page without being logged in, gets assigned a variation, and then logs in later:
+
+```typescript
+// User visits page without userId
+const configWithoutUser = {
+  apiUrl: "http://localhost:3001/api",
+  // userId: undefined (not logged in)
+};
+
+const { variation } = useExperiment("button-test", configWithoutUser);
+// variation: "blue" (stored in localStorage only)
+
+// User logs in - userId becomes available
+const configWithUser = {
+  apiUrl: "http://localhost:3001/api",
+  userId: "user-123", // User just logged in
+};
+
+// The hook automatically:
+// 1. Detects userId change
+// 2. Syncs localStorage variation to backend
+// 3. Or uses existing backend variation if user already has one
 ```
 
 ## Advanced Usage
