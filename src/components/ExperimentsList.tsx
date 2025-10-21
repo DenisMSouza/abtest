@@ -47,8 +47,9 @@ export function ExperimentsList({
 
   // Filter experiments
   const filteredExperiments = experiments.filter(experiment => {
-    const matchesSearch = experiment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      experiment.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = experiment.name.toLowerCase().includes(searchLower) ||
+      experiment.id.toLowerCase().includes(searchLower);
     const matchesStatus = statusFilter === 'all' ||
       (statusFilter === 'active' && experiment.isActive) ||
       (statusFilter === 'inactive' && !experiment.isActive);
@@ -79,7 +80,7 @@ export function ExperimentsList({
               <div className="relative">
                 <Input
                   type="text"
-                  placeholder="Search experiments..."
+                  placeholder="Search by name or ID..."
                   value={searchQuery}
                   onChange={(e) => onSearchChange(e.target.value)}
                   className="pl-8"
