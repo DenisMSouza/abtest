@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { calculateStatisticalSignificance, VariationStats } from '@/app/utils/statistics';
 
 interface StatisticalAnalysisProps {
@@ -16,6 +17,43 @@ interface StatisticalAnalysisProps {
     [key: string]: any; // Allow additional properties
   }>;
 }
+
+// Statistical metric definitions
+const STATISTICAL_METRICS = [
+  {
+    key: 'pvalue',
+    label: 'P-value',
+    getValue: (result: any) => result.pValue.toFixed(4),
+    getSafeValue: (safeValue: number) => safeValue.toFixed(4),
+    description: 'Probability that the observed difference occurred by chance. Lower values (≤0.05) indicate statistical significance.',
+    title: 'P-value'
+  },
+  {
+    key: 'zscore',
+    label: 'Z-score',
+    getValue: (result: any) => result.zScore.toFixed(3),
+    getSafeValue: (safeValue: number) => safeValue.toFixed(3),
+    description: 'Standard score indicating how many standard deviations the result is from the expected value. Higher absolute values indicate stronger evidence.',
+    title: 'Z-score'
+  },
+  {
+    key: 'uplift',
+    label: 'Relative Uplift',
+    getValue: (result: any) => `${result.relativeUplift >= 0 ? '+' : ''}${result.relativeUplift.toFixed(2)}%`,
+    getSafeValue: (safeValue: number) => `${safeValue >= 0 ? '+' : ''}${safeValue.toFixed(2)}%`,
+    description: 'Percentage improvement of the test variation compared to baseline. Positive values indicate improvement, negative values indicate decline.',
+    title: 'Relative Uplift',
+    hasColor: true
+  },
+  {
+    key: 'confidence',
+    label: 'Confidence',
+    getValue: (result: any) => `${result.confidenceLevel}%`,
+    getSafeValue: (safeValue: number) => `${safeValue}%`,
+    description: 'Confidence level for the statistical test. 95% means we can be 95% confident that the observed difference is real and not due to random chance.',
+    title: 'Confidence'
+  }
+];
 
 export function StatisticalAnalysis({ variations }: StatisticalAnalysisProps) {
   // We need at least 2 variations to compare
@@ -114,90 +152,51 @@ export function StatisticalAnalysis({ variations }: StatisticalAnalysisProps) {
           <div className="space-y-3">
             <h4 className="font-medium text-sm">Statistical Details</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-muted-foreground cursor-help flex items-center gap-1">
-                      P-value:
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+              {STATISTICAL_METRICS.map((metric) => {
+                const safeValue = metric.key === 'pvalue' ? safePValue :
+                  metric.key === 'zscore' ? safeZScore :
+                    metric.key === 'uplift' ? safeRelativeUplift :
+                      result.confidenceLevel;
+                const displayValue = metric.getSafeValue(safeValue);
+
+                return (
+                  <div key={metric.key} className="flex items-center">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-muted-foreground cursor-help items-center gap-1 hidden md:flex">
+                          {metric.label}:
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">{metric.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="text-muted-foreground md:hidden">{metric.label}:</span>
+                    <span className={`ml-2 font-mono ${metric.hasColor && safeValue >= 0 ? 'text-green-600' : metric.hasColor && safeValue < 0 ? 'text-red-600' : ''}`}>
+                      {displayValue}
                     </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      Probability that the observed difference occurred by chance.
-                      Lower values (≤0.05) indicate statistical significance.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="ml-2 font-mono">
-                  {safePValue.toFixed(4)}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-muted-foreground cursor-help flex items-center gap-1">
-                      Z-score:
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      Standard score indicating how many standard deviations
-                      the result is from the expected value. Higher absolute values indicate stronger evidence.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="ml-2 font-mono">
-                  {safeZScore.toFixed(3)}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-muted-foreground cursor-help flex items-center gap-1">
-                      Relative Uplift:
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      Percentage improvement of the test variation compared to baseline.
-                      Positive values indicate improvement, negative values indicate decline.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className={`ml-2 font-mono ${safeRelativeUplift >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeRelativeUplift >= 0 ? '+' : ''}{safeRelativeUplift.toFixed(2)}%
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="text-muted-foreground cursor-help flex items-center gap-1">
-                      Confidence:
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      Confidence level for the statistical test. 95% means we can be 95% confident
-                      that the observed difference is real and not due to random chance.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <span className="ml-2 font-mono">
-                  {result.confidenceLevel}%
-                </span>
-              </div>
+                    {/* Mobile Modal */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button className="md:hidden ml-1 text-muted-foreground hover:text-foreground">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{metric.title}</DialogTitle>
+                          <DialogDescription>{metric.description}</DialogDescription>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
