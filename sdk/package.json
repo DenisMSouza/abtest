@@ -1,7 +1,7 @@
 {
   "name": "@denismartins/abtest-sdk",
-  "version": "1.0.6",
-  "description": "A/B Testing SDK for React applications - Self-hosted solution",
+  "version": "1.1.0",
+  "description": "A/B Testing SDK for React applications - Self-hosted solution with SSR support",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -24,7 +24,11 @@
     "react",
     "hook",
     "self-hosted",
-    "analytics"
+    "analytics",
+    "ssr",
+    "server-side-rendering",
+    "nextjs",
+    "environment-aware"
   ],
   "author": "Denis Souza",
   "license": "MIT",
