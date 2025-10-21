@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { StatisticalAnalysis } from '@/app/components/StatisticalAnalysis';
+import { StatisticalAnalysis } from '@/components/StatisticalAnalysis';
+import { ExperimentIdSection } from '@/components/ExperimentIdSection';
+import { InlineCopyButton } from '@/components/InlineCopyButton';
 
 interface Experiment {
   id: string;
@@ -298,6 +300,7 @@ export default function Dashboard() {
     }
   };
 
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -574,9 +577,14 @@ export default function Dashboard() {
                           <span className="text-xs text-gray-500">
                             {experiment.variations?.length || 0} variations
                           </span>
-                          <span className={`text-xs font-medium ${experiment.isActive ? 'text-green-600' : 'text-gray-500'}`}>
-                            {experiment.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <InlineCopyButton
+                              text={experiment.id}
+                            />
+                            <span className={`text-xs font-medium ${experiment.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                              {experiment.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -607,6 +615,10 @@ export default function Dashboard() {
                     )}
                   </div>
                   <p className="text-gray-600 mb-4">{selectedExperiment.description}</p>
+
+                  {/* Experiment ID Copy Section */}
+                  <ExperimentIdSection experimentId={selectedExperiment.id} />
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <span className="text-sm font-medium text-gray-500">Version:</span>
