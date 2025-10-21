@@ -169,6 +169,11 @@ const handleExperimentError = (
 /**
  * Enhanced useExperiment hook for production use
  * Now accepts experiment ID and fetches experiment details automatically
+ * 
+ * Environment-Aware Behavior:
+ * - Server-Side (SSR): Skips localStorage, always fetches from backend
+ * - Client-Side: Uses localStorage for performance, with backend sync
+ * - Automatic detection: No configuration needed
  */
 export const useExperiment = (
   experimentId: string,
@@ -227,13 +232,21 @@ export const useExperiment = (
       return;
     }
 
+    // Environment detection
+    const isServer = typeof window === 'undefined';
+    const hasLocalStorage = typeof localStorage !== 'undefined';
+
+    debugLog(stableConfig, `Environment: ${isServer ? 'Server' : 'Client'}, localStorage: ${hasLocalStorage ? 'Available' : 'Unavailable'}`);
+
     const expId = getExpId(experiment.id);
     const cookieVariation = getCookie(removeExperimentPrefix(expId));
-    const localVariation = localStorage.getItem(expId);
+    const localVariation = hasLocalStorage ? localStorage.getItem(expId) : null;
 
     if (cookieVariation) {
       // Handle cookie variation directly
-      localStorage.setItem(getExpId(experiment.id), cookieVariation);
+      if (hasLocalStorage) {
+        localStorage.setItem(getExpId(experiment.id), cookieVariation);
+      }
       dispatch({
         type: 'SET_VARIATION',
         payload: {
@@ -244,8 +257,8 @@ export const useExperiment = (
       });
       debugLog(stableConfig, `Using variation ${cookieVariation} from cookie for experiment ${experiment.id}`);
       await saveVariation(experiment, cookieVariation);
-    } else if (localVariation) {
-      // Handle localStorage variation directly
+    } else if (localVariation && !isServer) {
+      // Handle localStorage variation directly (only on client-side)
       dispatch({
         type: 'SET_VARIATION',
         payload: {
@@ -264,7 +277,9 @@ export const useExperiment = (
         if (userVariations?.[0]) {
           const backendVariationObject = userVariations[0] as BackendVariation;
           const variationName = backendVariationObject.variation;
-          localStorage.setItem(getExpId(experiment.id), variationName);
+          if (hasLocalStorage) {
+            localStorage.setItem(getExpId(experiment.id), variationName);
+          }
           dispatch({
             type: 'SET_VARIATION',
             payload: {
@@ -277,7 +292,9 @@ export const useExperiment = (
         } else {
           // Create new variation
           const variation = getWeightedVariation(experiment.variations, stableConfig.randomFn);
-          localStorage.setItem(getExpId(experiment.id), variation);
+          if (hasLocalStorage) {
+            localStorage.setItem(getExpId(experiment.id), variation);
+          }
           dispatch({
             type: 'SET_VARIATION',
             payload: {
@@ -295,7 +312,9 @@ export const useExperiment = (
     } else {
       // Create new variation without login
       const variation = getWeightedVariation(experiment.variations, stableConfig.randomFn);
-      localStorage.setItem(getExpId(experiment.id), variation);
+      if (hasLocalStorage) {
+        localStorage.setItem(getExpId(experiment.id), variation);
+      }
       dispatch({
         type: 'SET_VARIATION',
         payload: {
