@@ -132,7 +132,7 @@ export const removeExperimentPrefix = (id: string): string => {
 };
 
 /**
- * Create API client with timeout and error handling
+ * Create API client with timeout, error handling, and security features
  */
 export const createApiClient = (config: ABTestConfig) => {
   const timeout = config.timeout || 5000;
@@ -143,11 +143,43 @@ export const createApiClient = (config: ABTestConfig) => {
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
+        // Build security headers
+        const securityHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        // Add API Key authentication
+        if (config.apiKey) {
+          securityHeaders["Authorization"] = `Bearer ${config.apiKey}`;
+        }
+
+        // Add custom headers
+        if (config.customHeaders) {
+          Object.assign(securityHeaders, config.customHeaders);
+        }
+
+        // Add request signing if enabled
+        if (config.enableRequestSigning && config.apiKey) {
+          const timestamp = Date.now().toString();
+          const nonce = Math.random().toString(36).substring(2);
+          const signature = await generateRequestSignature(
+            url,
+            options,
+            timestamp,
+            nonce,
+            config.apiKey
+          );
+
+          securityHeaders["X-Timestamp"] = timestamp;
+          securityHeaders["X-Nonce"] = nonce;
+          securityHeaders["X-Signature"] = signature;
+        }
+
         const response = await fetch(url, {
           ...options,
           signal: controller.signal,
           headers: {
-            "Content-Type": "application/json",
+            ...securityHeaders,
             ...options.headers,
           },
         });
@@ -166,6 +198,61 @@ export const createApiClient = (config: ABTestConfig) => {
     },
   };
 };
+
+/**
+ * Generate request signature for enhanced security
+ */
+async function generateRequestSignature(
+  url: string,
+  options: RequestInit,
+  timestamp: string,
+  nonce: string,
+  apiKey: string
+): Promise<string> {
+  const method = options.method || "GET";
+  const body = options.body ? JSON.stringify(options.body) : "";
+  const dataToSign = `${method}:${url}:${timestamp}:${nonce}:${body}`;
+
+  // Check if Web Crypto API is available
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    try {
+      // Use Web Crypto API for HMAC-SHA256
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(apiKey),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+
+      const signature = await crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(dataToSign)
+      );
+      return Array.from(new Uint8Array(signature))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    } catch (error) {
+      // Fallback to simple hash if Web Crypto fails
+      console.warn("Web Crypto API not available, using fallback signature");
+    }
+  }
+
+  // Fallback: Simple hash-based signature (less secure but works everywhere)
+  const simpleHash = (str: string): string => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
+  };
+
+  return simpleHash(`${apiKey}:${dataToSign}`);
+}
 
 /**
  * Log debug messages

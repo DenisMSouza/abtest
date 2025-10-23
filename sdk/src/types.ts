@@ -1,6 +1,8 @@
 export interface ABTestConfig {
   /** API base URL for your self-hosted A/B testing server */
   apiUrl: string;
+  /** Optional: Simple API key for basic authentication (recommended for production) */
+  apiKey?: string;
   /** Optional: User ID for user-based experiments */
   userId?: string;
   /** Optional: Session ID for session-based experiments */
@@ -15,6 +17,10 @@ export interface ABTestConfig {
   randomFn?: () => number;
   /** Optional: Timeout for API requests (ms) */
   timeout?: number;
+  /** Optional: Enable enhanced security (request signing) - only for high-security needs */
+  enableRequestSigning?: boolean;
+  /** Optional: Custom headers for authentication */
+  customHeaders?: Record<string, string>;
 }
 
 export interface Variation {
