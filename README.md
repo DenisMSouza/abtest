@@ -1,237 +1,258 @@
-# A/B Testing Platform
+# 🧪 A/B Testing Platform
 
-A full-stack A/B testing platform built with Next.js and Node.js, featuring a React hook for easy experiment management and a dashboard for analytics.
+[![npm version](https://img.shields.io/npm/v/@denismartins/abtest-sdk.svg)](https://www.npmjs.com/package/@denismartins/abtest-sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 
-## 🚀 Features
+> **A complete, self-hosted A/B testing platform with React SDK, dashboard, and statistical analysis**
 
-- **Frontend Hook**: Easy-to-use React hook for A/B testing
-- **Dashboard**: Create and manage experiments with a beautiful UI
-- **Real-time Analytics**: Track user variations and conversion rates
-- **Database**: SQLite database with Sequelize ORM (easily switchable to PostgreSQL/MySQL)
-- **TypeScript**: Full type safety across the stack
-- **Modern UI**: Built with Tailwind CSS
+A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies.
 
-## 🏗️ Architecture
+![A/B Testing Dashboard](./public/Screenshot%202025-10-23%20at%2016.36.23.png)
 
-### Frontend (Next.js)
+_Beautiful, modern dashboard for managing your experiments_
 
-- **React Hook**: `useExperiments` for managing A/B tests
-- **Dashboard**: Experiment creation and management
-- **API Integration**: Seamless connection to backend services
+## 🎯 What You Get
 
-### Backend (Node.js + Express)
+- **📊 Beautiful Dashboard** - Create and manage experiments with an intuitive interface
+- **⚡ React SDK** - Easy-to-use hook for frontend integration
+- **📈 Statistical Analysis** - Built-in significance testing and performance metrics
+- **🔒 Self-Hosted** - Complete control over your data and infrastructure
+- **🚀 Production Ready** - Docker support, API authentication, and more
 
-- **RESTful API**: Full CRUD operations for experiments
-- **Database Models**: Experiments, Variations, UserVariations
-- **Analytics**: Real-time statistics and user tracking
+## 📸 Dashboard Preview
 
-## 🛠️ Setup
+![A/B Testing Dashboard](https://via.placeholder.com/800x500/1e40af/ffffff?text=A%2FB+Testing+Dashboard)
 
-### Prerequisites
+_Beautiful, modern dashboard for managing your experiments_
 
-- Node.js 18+
-- npm or yarn
+## 🚀 Quick Start
 
-### Backend Setup
-
-1. Navigate to the backend directory:
+### 1. Install the SDK
 
 ```bash
-cd backend
+npm install @denismartins/abtest-sdk
 ```
 
-2. Install dependencies:
+### 2. Clone the Repository
 
 ```bash
-npm install
+git clone git@github.com:DenisMSouza/abtest.git
+cd abtest
 ```
 
-3. Start the development server:
-
-```bash
-npm run dev
-```
-
-The backend will be available at `http://localhost:3001`
-
-### Frontend Setup
-
-1. Navigate to the root directory:
-
-```bash
-cd ..
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Start the development server:
-
-```bash
-npm run dev
-```
-
-The frontend will be available at `http://localhost:3000`
-
-## 📊 Usage
-
-### Using the A/B Testing Hook
+### 3. Use in Your React App
 
 ```tsx
-import { useExperiments } from "./hooks/useExperiment";
+import { useExperiment } from "@denismartins/abtest-sdk";
 
 function MyComponent() {
-  const experiment = {
-    id: "button-color-test",
-    variations: [
-      { name: "baseline", weight: 0.5 },
-      { name: "red", weight: 0.5 },
-    ],
-  };
-
-  const { variation, isLoading, error } = useExperiments(experiment);
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  const { variation, trackSuccess } = useExperiment({
+    experimentId: "button-color-test",
+    userId: "user-123",
+    apiKey: "your-api-key",
+    apiUrl: "http://localhost:3001/api",
+  });
 
   return (
-    <button className={variation === "red" ? "bg-red-500" : "bg-blue-500"}>
-      {variation === "red" ? "Red Button" : "Blue Button"}
-    </button>
+    <div>
+      {variation === "red" ? (
+        <button style={{ backgroundColor: "red" }}>Red Button</button>
+      ) : (
+        <button>Default Button</button>
+      )}
+
+      <button onClick={() => trackSuccess()}>Track Conversion</button>
+    </div>
   );
 }
 ```
 
-### Creating Experiments via Dashboard
+### 3. Set Up the Backend
 
-1. Go to `http://localhost:3000/dashboard`
-2. Click "New Experiment"
-3. Fill in experiment details:
-   - Name and description
-   - Variations with weights
-   - Mark one as baseline
-4. Click "Create"
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/abtest.git
+cd abtest
 
-### API Endpoints
+# Start with Docker
+docker-compose up -d
 
-- `GET /api/experiments` - List all experiments
-- `POST /api/experiments` - Create new experiment
-- `GET /api/experiments/:id` - Get experiment details
-- `GET /api/experiments/:id/stats` - Get experiment statistics
-- `GET /api/experiments/:experimentId/variation` - Get user's variation
-- `POST /api/experiments/:experimentId/variation` - Persist user variation
+# Or run locally
+cd backend
+npm install
+npm start
+```
 
-## 🗄️ Database Schema
+## ✨ Key Features
 
-### Experiments
+### 🎨 **Modern Dashboard**
 
-- `id` (UUID, Primary Key)
-- `name` (String)
-- `description` (Text)
-- `version` (String)
-- `startDate` (Date)
-- `endDate` (Date)
-- `isActive` (Boolean)
+- Create and manage experiments visually
+- Real-time performance metrics
+- Statistical significance testing
+- Experiment ID copying for easy integration
 
-### Variations
+### ⚡ **React SDK**
 
-- `id` (UUID, Primary Key)
-- `experimentId` (UUID, Foreign Key)
-- `name` (String)
-- `weight` (Float)
-- `isBaseline` (Boolean)
+- Simple `useExperiment` hook
+- TypeScript support
+- SSR-compatible
+- Automatic user assignment
+- Conversion tracking
 
-### UserVariations
+### 📊 **Statistical Analysis**
 
-- `id` (UUID, Primary Key)
-- `experimentId` (UUID, Foreign Key)
-- `variationId` (UUID, Foreign Key)
-- `userId` (String, Optional)
-- `sessionId` (String, Optional)
-- `timestamp` (Date)
+- P-value calculations
+- Confidence intervals
+- Relative uplift metrics
+- Sample size recommendations
+
+### 🔒 **Enterprise Security**
+
+- API key authentication
+- Request signing
+- Self-hosted deployment
+- Database-driven configuration
+
+## 📦 NPM Package
+
+The React SDK is available on npm:
+
+```bash
+npm install @denismartins/abtest-sdk
+```
+
+**Package Details:**
+
+- **Version:** Latest stable release
+- **Size:** ~15KB gzipped
+- **TypeScript:** Full type definitions included
+- **React:** 16.8+ (hooks support)
+- **Browser:** Modern browsers (ES2018+)
+
+## 🛠️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React App     │    │   Dashboard     │    │   Backend API   │
+│                 │    │                 │    │                 │
+│  useExperiment  │◄──►│  Create Tests   │◄──►│  Express.js     │
+│  Hook           │    │  View Results   │    │  SQLite/MySQL   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 📚 Documentation
+
+- **[Hook Usage Guide](HOOK_USAGE.md)** - Complete frontend integration guide
+- **[Setup Instructions](SETUP.md)** - Backend and dashboard setup
+- **[API Documentation](backend/README.md)** - Backend API reference
+- **[SDK Documentation](sdk/README.md)** - React SDK reference
+
+## 🔗 Repository Information
+
+- **GitHub Repository:** [DenisMSouza/abtest](https://github.com/DenisMSouza/abtest)
+- **NPM Package:** [@denismartins/abtest-sdk](https://www.npmjs.com/package/@denismartins/abtest-sdk)
+- **Issues & Discussions:** [GitHub Issues](https://github.com/DenisMSouza/abtest/issues)
+
+## 🎯 Use Cases
+
+- **E-commerce** - Test checkout flows, product pages, pricing
+- **SaaS** - Optimize signup flows, feature adoption, onboarding
+- **Content** - A/B test headlines, CTAs, layouts
+- **Mobile Apps** - React Native integration support
+- **Marketing** - Landing pages, email campaigns, ads
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the backend directory:
-
-```
-NODE_ENV=development
+```bash
+# Backend
 PORT=3001
-DATABASE_URL=sqlite:./database.sqlite
+NODE_ENV=production
+
+# Frontend
+NEXT_PUBLIC_ABTEST_API_URL=http://localhost:3001/api
+NEXT_PUBLIC_ABTEST_API_KEY=your-api-key
 ```
 
-### Frontend Environment
+### Docker Deployment
 
-Create a `.env.local` file in the root directory:
+```yaml
+version: "3.8"
+services:
+  abtest-backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
 
+  abtest-frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_ABTEST_API_URL=http://abtest-backend:3001/api
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-```
-
-## 🚀 Deployment
-
-### Backend Deployment
-
-1. Build the backend:
-
-```bash
-cd backend
-npm run build
-```
-
-2. Start production server:
-
-```bash
-npm start
-```
-
-### Frontend Deployment
-
-1. Build the frontend:
-
-```bash
-npm run build
-```
-
-2. Start production server:
-
-```bash
-npm start
-```
-
-## 📈 Analytics
-
-The platform provides real-time analytics including:
-
-- Total users per experiment
-- Variation distribution
-- Conversion rates
-- User behavior tracking
-
-## 🔒 Security
-
-- Input validation and sanitization
-- SQL injection protection via Sequelize ORM
-- CORS configuration
-- Environment variable management
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/abtest.git
+cd abtest
+
+# Install dependencies
+npm install
+
+# Start development servers
+npm run dev:backend  # Backend on :3001
+npm run dev:frontend # Frontend on :3000
+```
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🙏 Acknowledgments
 
-For support and questions, please open an issue in the GitHub repository.
+- Built with [React](https://reactjs.org/)
+- Powered by [Next.js](https://nextjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Icons by [Lucide](https://lucide.dev/)
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/DenisMSouza/abtest/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/DenisMSouza/abtest/discussions)
+- **Documentation:** [Full Documentation](https://github.com/DenisMSouza/abtest/wiki)
+
+---
+
+**Made with ❤️ for the developer community**
+
+_Star this repository if you find it useful! ⭐_
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Powered by [React](https://reactjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Database by [Sequelize](https://sequelize.org/)
