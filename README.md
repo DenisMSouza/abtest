@@ -73,7 +73,7 @@ function MyComponent() {
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/abtest.git
+git clone https://github.com/DenisMSouza/abtest.git
 cd abtest
 
 # Start with Docker
@@ -206,7 +206,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/abtest.git
+git clone https://github.com/DenisMSouza/abtest.git
 cd abtest
 
 # Install dependencies
