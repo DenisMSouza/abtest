@@ -69,7 +69,7 @@ function MyComponent() {
 }
 ```
 
-### 3. Set Up the Backend
+### 4. Set Up the Backend
 
 ```bash
 # Clone the repository
@@ -156,6 +156,191 @@ npm install @denismartins/abtest-sdk
 - **NPM Package:** [@denismartins/abtest-sdk](https://www.npmjs.com/package/@denismartins/abtest-sdk)
 - **Issues & Discussions:** [GitHub Issues](https://github.com/DenisMSouza/abtest/issues)
 
+## 🔧 Backend Integration
+
+### **Success Tracking from Any Backend**
+
+Track success events from your backend when business logic completes (purchases, signups, upgrades, etc.):
+
+#### **Python Example (Django/Flask)**
+
+```python
+import requests
+
+class ABTestClient:
+    def __init__(self, api_key, api_url="http://localhost:3001/api"):
+        self.api_key = api_key
+        self.api_url = api_url
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        })
+
+    def track_success(self, experiment_id, user_id, event="conversion", value=None):
+        """Track success event for experiment"""
+        url = f"{self.api_url}/experiments/{experiment_id}/success"
+
+        payload = {
+            "userId": user_id,
+            "event": event
+        }
+
+        if value:
+            payload["value"] = value
+
+        try:
+            response = self.session.post(url, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Error tracking success: {e}")
+            return None
+
+# Usage in your business logic
+client = ABTestClient("abtest_your_api_key_here")
+
+# Track different types of success events
+client.track_success("button-color-test", "user_123", "purchase", "premium")
+client.track_success("signup-form-test", "user_456", "signup")
+client.track_success("pricing-test", "user_789", "upgrade", "pro_plan")
+```
+
+#### **Node.js Example**
+
+```javascript
+const axios = require("axios");
+
+class ABTestClient {
+  constructor(apiKey, apiUrl = "http://localhost:3001/api") {
+    this.apiKey = apiKey;
+    this.apiUrl = apiUrl;
+    this.client = axios.create({
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  async trackSuccess(experimentId, userId, event = "conversion", value = null) {
+    try {
+      const response = await this.client.post(
+        `${this.apiUrl}/experiments/${experimentId}/success`,
+        {
+          userId,
+          event,
+          ...(value && { value }),
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error tracking success:", error.message);
+      return null;
+    }
+  }
+}
+
+// Usage
+const client = new ABTestClient("abtest_your_api_key_here");
+await client.trackSuccess(
+  "checkout-flow-test",
+  "user_123",
+  "purchase",
+  "amount_99"
+);
+```
+
+#### **PHP Example**
+
+```php
+<?php
+class ABTestClient {
+    private $apiKey;
+    private $apiUrl;
+
+    public function __construct($apiKey, $apiUrl = 'http://localhost:3001/api') {
+        $this->apiKey = $apiKey;
+        $this->apiUrl = $apiUrl;
+    }
+
+    public function trackSuccess($experimentId, $userId, $event = 'conversion', $value = null) {
+        $url = $this->apiUrl . "/experiments/{$experimentId}/success";
+
+        $data = [
+            'userId' => $userId,
+            'event' => $event
+        ];
+
+        if ($value !== null) {
+            $data['value'] = $value;
+        }
+
+        $options = [
+            'http' => [
+                'header' => [
+                    "Authorization: Bearer {$this->apiKey}",
+                    "Content-Type: application/json"
+                ],
+                'method' => 'POST',
+                'content' => json_encode($data)
+            ]
+        ];
+
+        $context = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+
+        return $result ? json_decode($result, true) : null;
+    }
+}
+
+// Usage
+$client = new ABTestClient('abtest_your_api_key_here');
+$client->trackSuccess('pricing-test', 'user_123', 'upgrade', 'pro_plan');
+?>
+```
+
+### **Real-World Integration Examples**
+
+#### **E-commerce Purchase Tracking**
+
+```python
+# Django view
+def process_purchase(request):
+    user_id = request.user.id
+    amount = request.POST.get('amount')
+
+    # Your business logic
+    order = create_order(user_id, amount)
+
+    # Track A/B test success
+    abtest_client.track_success(
+        experiment_id="checkout-flow-test",
+        user_id=str(user_id),
+        event="purchase",
+        value=f"amount_{amount}"
+    )
+
+    return JsonResponse({"success": True, "order_id": order.id})
+```
+
+#### **SaaS Signup Tracking**
+
+```javascript
+// Express.js route
+app.post("/api/signup", async (req, res) => {
+  const { email, userId } = req.body;
+
+  // Your business logic
+  const user = await createUser(email, userId);
+
+  // Track A/B test success
+  await abtestClient.trackSuccess("signup-form-test", userId, "signup");
+
+  res.json({ success: true, user_id: user.id });
+});
+```
+
 ## 🎯 Use Cases
 
 - **E-commerce** - Test checkout flows, product pages, pricing
@@ -239,20 +424,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Made with ❤️ for the developer community**
 
 _Star this repository if you find it useful! ⭐_
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- Powered by [React](https://reactjs.org/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-- Database by [Sequelize](https://sequelize.org/)
