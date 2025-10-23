@@ -186,7 +186,7 @@ export const deleteExperiment = async (req: Request, res: Response) => {
 
 export const getExperimentVariation = async (req: Request, res: Response) => {
   try {
-    const { experimentId } = req.params;
+    const { id: experimentId } = req.params;
     const { userId, sessionId } = req.query;
 
     // Find existing user variation
@@ -196,17 +196,21 @@ export const getExperimentVariation = async (req: Request, res: Response) => {
 
     const userVariation = await UserVariation.findOne({
       where: whereClause,
-      include: [{ model: Variation, as: "variation" }],
     });
 
     if (userVariation) {
-      return res.json([
-        {
-          experiment: experimentId,
-          variation: (userVariation as any).variation.name,
-          timestamp: userVariation.timestamp,
-        },
-      ]);
+      // Fetch the variation details separately
+      const variation = await Variation.findByPk(userVariation.variationId);
+
+      if (variation) {
+        return res.json([
+          {
+            experiment: experimentId,
+            variation: variation.name,
+            timestamp: userVariation.timestamp,
+          },
+        ]);
+      }
     }
 
     res.json([]);

@@ -34,11 +34,18 @@ export default function Home() {
           <p className="text-lg lg:text-xl text-gray-600 mb-6 lg:mb-8">
             Create, manage, and analyze A/B tests with ease
           </p>
-          <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/dashboard">
-              Go to Dashboard
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <Link href="/dashboard">
+                Go to Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+              <Link href="/settings">
+                ⚙️ Settings
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">

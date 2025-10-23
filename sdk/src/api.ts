@@ -19,11 +19,8 @@ export class ABTestAPI {
   async getExperimentVariation(
     experimentId: string
   ): Promise<BackendVariation[]> {
-    // Use internal API for SDK internal operations
-    const internalApiUrl = this.config.apiUrl.replace(
-      "/api",
-      "/api/internal/experiments"
-    );
+    // Use public API with authentication for SDK operations
+    const url = `${this.config.apiUrl}/experiments/${experimentId}/variation`;
 
     // Build query parameters
     const params = new URLSearchParams();
@@ -31,11 +28,11 @@ export class ABTestAPI {
     if (this.config.sessionId)
       params.append("sessionId", this.config.sessionId);
 
-    const url = `${internalApiUrl}/${experimentId}/variation?${params.toString()}`;
+    const fullUrl = `${url}?${params.toString()}`;
     debugLog(this.config, `Getting variation for experiment ${experimentId}`);
 
     try {
-      const response = await this.client.fetch(url);
+      const response = await this.client.fetch(fullUrl);
       return await response.json();
     } catch (error) {
       errorLog(
@@ -54,11 +51,8 @@ export class ABTestAPI {
     experimentId: string,
     variation: string
   ): Promise<void> {
-    // Use internal API for SDK internal operations
-    const internalApiUrl = this.config.apiUrl.replace(
-      "/api",
-      "/api/internal/experiments"
-    );
+    // Use public API with authentication for SDK operations
+    const url = `${this.config.apiUrl}/experiments/${experimentId}/variation`;
 
     // Build query parameters
     const params = new URLSearchParams();
@@ -66,14 +60,14 @@ export class ABTestAPI {
     if (this.config.sessionId)
       params.append("sessionId", this.config.sessionId);
 
-    const url = `${internalApiUrl}/${experimentId}/variation?${params.toString()}`;
+    const fullUrl = `${url}?${params.toString()}`;
     debugLog(
       this.config,
       `Persisting variation ${variation} for experiment ${experimentId}`
     );
 
     try {
-      await this.client.fetch(url, {
+      await this.client.fetch(fullUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

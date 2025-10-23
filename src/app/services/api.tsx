@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/internal';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/internal/experiments';
 
 export const persistExperimentVariaton = async (
   experiment: string,
@@ -11,7 +11,7 @@ export const persistExperimentVariaton = async (
     if (userId) params.append('userId', userId);
     if (sessionId) params.append('sessionId', sessionId);
 
-    const response = await fetch(`${API_BASE_URL}/experiments/${experiment}/variation?${params}`, {
+    const response = await fetch(`${API_BASE_URL}/${experiment}/variation?${params}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export const getExperimentVariation = async (
     if (userId) params.append('userId', userId);
     if (sessionId) params.append('sessionId', sessionId);
 
-    const response = await fetch(`${API_BASE_URL}/experiments/${experiment}/variation?${params}`);
+    const response = await fetch(`${API_BASE_URL}/${experiment}/variation?${params}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -55,7 +55,7 @@ export const getExperimentVariation = async (
 
 export const getExperiments = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/experiments`);
+    const response = await fetch(`${API_BASE_URL}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -70,7 +70,7 @@ export const getExperiments = async () => {
 
 export const createExperiment = async (experimentData: any) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/experiments`, {
+    const response = await fetch(`${API_BASE_URL}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ export const createExperiment = async (experimentData: any) => {
 
 export const updateExperiment = async (experimentId: string, experimentData: any) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/experiments/${experimentId}`, {
+    const response = await fetch(`${API_BASE_URL}/${experimentId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ export const updateExperiment = async (experimentId: string, experimentData: any
 
 export const getExperimentStats = async (experimentId: string) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/experiments/${experimentId}/stats`);
+    const response = await fetch(`${API_BASE_URL}/${experimentId}/stats`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -132,7 +132,7 @@ export const trackSuccess = async (
   value?: number
 ) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/experiments/${experimentId}/success`, {
+    const response = await fetch(`${API_BASE_URL}/${experimentId}/success`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

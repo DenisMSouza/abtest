@@ -189,6 +189,9 @@ export const useExperiment = (
     timeout: config.timeout,
     environment: config.environment,
     randomFn: config.randomFn,
+    apiKey: config.apiKey,
+    customHeaders: config.customHeaders,
+    enableRequestSigning: config.enableRequestSigning,
   }), [
     config.apiUrl,
     config.userId,
@@ -197,7 +200,10 @@ export const useExperiment = (
     config.fallback,
     config.timeout,
     config.environment,
-    config.randomFn
+    config.randomFn,
+    config.apiKey,
+    config.customHeaders,
+    config.enableRequestSigning,
   ]);
 
   const api = useMemo(() => new ABTestAPI(stableConfig), [stableConfig]);

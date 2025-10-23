@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import sequelize from "./config/database";
 import experimentRoutes from "./routes/experiments";
 import publicRoutes from "./routes/public";
+import apiKeyRoutes from "./routes/apiKeys";
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use("/api", publicRoutes);
 
 // Internal API (for dashboard and admin)
 app.use("/api/internal/experiments", experimentRoutes);
+app.use("/api/internal/api-keys", apiKeyRoutes);
 
 // Health check
 app.get("/health", (req, res) => {
@@ -38,6 +40,7 @@ const startServer = async () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
       console.log(`API base: http://localhost:${PORT}/api`);
+      console.log(`API Keys: http://localhost:${PORT}/api/internal/api-keys`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);

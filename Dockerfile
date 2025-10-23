@@ -7,10 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 COPY src/ ./src/
 COPY public/ ./public/
-COPY next.config.js ./
-COPY tailwind.config.js ./
-COPY postcss.config.js ./
+COPY next.config.ts ./
+COPY postcss.config.mjs ./
 COPY tsconfig.json ./
+COPY components.json ./
 
 # Install dependencies
 RUN npm ci

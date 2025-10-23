@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getExperiments, createExperiment, getExperimentStats, updateExperiment } from '../services/api';
@@ -9,7 +9,7 @@ import { ExperimentsList } from '@/components/ExperimentsList';
 import { ExperimentDetails } from '@/components/ExperimentDetails';
 import { Experiment, ExperimentStats, StatusFilter, ExperimentFormData } from '@/types/experiment';
 
-export default function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
@@ -101,7 +101,12 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold text-gray-900">A/B Testing Dashboard</h1>
               <p className="mt-2 text-gray-600">Manage your experiments and view results</p>
             </div>
-            <div className="flex w-full lg:w-auto justify-start">
+            <div className="flex w-full lg:w-auto justify-start gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/settings">
+                  ⚙️ Settings
+                </Link>
+              </Button>
               <Button variant="outline" asChild>
                 <Link href="/">
                   ← Back to Overview
@@ -134,5 +139,13 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
