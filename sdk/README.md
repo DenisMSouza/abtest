@@ -12,51 +12,51 @@ A production-ready React hook for A/B testing with your self-hosted A/B testing 
 - 📱 **React Native Compatible**: Works in both web and mobile environments
 - 🛡️ **TypeScript**: Full type safety and IntelliSense support
 - 🐛 **Debug Mode**: Comprehensive logging for development
-- 🔐 **Login Sync**: Automatically syncs variations when users log in after being assigned a variation
+- 🔐 **API Key Authentication**: Secure communication with your backend
+- 🌐 **Environment Aware**: Works seamlessly in SSR and client-side environments
 
 ## Installation
 
 ```bash
-npm install @abtest/sdk
+npm install @denismartins/abtest-sdk
 ```
 
 ## Quick Start
 
-### 1. Configure the SDK
+### 1. Install and Configure
 
 ```typescript
-import { useExperiment, ABTestConfig } from "@abtest/sdk";
+import { useExperiment } from "@denismartins/abtest-sdk";
 
-const config: ABTestConfig = {
-  apiUrl: "http://localhost:3001/api", // Your self-hosted API URL
+const { variation, isLoading, trackSuccess } = useExperiment({
+  experimentId: "your-experiment-id", // From your dashboard
   userId: "user-123", // Optional: for user-based experiments
-  environment: "production", // Optional: development, staging, production
+  apiKey: "your-api-key", // Required: from dashboard settings
+  apiUrl: "http://localhost:3001/api", // Your backend URL
   debug: false, // Optional: enable debug logging
-  fallback: "control", // Optional: fallback variation
   timeout: 5000, // Optional: API timeout in ms
-};
+});
 ```
 
 ### 2. Use the Hook
 
 ```typescript
 import React from "react";
-import { useExperiment } from "@abtest/sdk";
+import { useExperiment } from "@denismartins/abtest-sdk";
 
 const ButtonExperiment = () => {
-  // Simply provide the experiment ID - the hook will fetch experiment details automatically
-  const { variation, isLoading, error, trackSuccess, experiment } =
-    useExperiment(
-      "button-color-test", // Experiment ID from your dashboard
-      config
-    );
+  const { variation, isLoading, trackSuccess } = useExperiment({
+    experimentId: "button-color-test", // Experiment ID from your dashboard
+    userId: "user-123",
+    apiKey: "your-api-key", // Get this from your dashboard settings
+    apiUrl: "http://localhost:3001/api",
+  });
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
 
   const handleClick = () => {
     // Track success when user clicks the button
-    trackSuccess({ buttonColor: variation });
+    trackSuccess();
   };
 
   return (
@@ -72,23 +72,19 @@ const ButtonExperiment = () => {
 
 ## API Reference
 
-### `useExperiment(experiment, config)`
+### `useExperiment(config)`
 
 The main hook for A/B testing.
 
 #### Parameters
 
-- **experiment** (`Experiment`): The experiment configuration
-- **config** (`ABTestConfig`): SDK configuration
+- **config** (`ABTestConfig`): SDK configuration object
 
 #### Returns
 
 - **variation** (`string | null`): Current variation name
 - **isLoading** (`boolean`): Whether the experiment is loading
-- **error** (`Error | null`): Any error that occurred
-- **source** (`string`): Source of the variation (localStorage, cookie, backend, generated, fallback)
-- **isActive** (`boolean`): Whether the experiment is active
-- **metadata** (`object`): Experiment metadata
+- **error** (`string | null`): Any error that occurred
 - **trackSuccess** (`function`): Track a success event
 
 ### `ABTestConfig`
@@ -97,50 +93,36 @@ Configuration object for the SDK.
 
 ```typescript
 interface ABTestConfig {
-  apiUrl: string; // Required: Your self-hosted API URL
+  experimentId: string; // Required: Experiment ID from your dashboard
+  apiKey: string; // Required: API key from dashboard settings
+  apiUrl: string; // Required: Your backend API URL
   userId?: string; // Optional: User ID for user-based experiments
   sessionId?: string; // Optional: Session ID for session-based experiments
-  environment?: "development" | "staging" | "production"; // Optional: Environment
   debug?: boolean; // Optional: Enable debug logging
-  fallback?: string; // Optional: Fallback variation when experiment fails
-  randomFn?: () => number; // Optional: Custom random function for testing
   timeout?: number; // Optional: API timeout in ms (default: 5000)
+  customHeaders?: Record<string, string>; // Optional: Custom headers
+  enableRequestSigning?: boolean; // Optional: Enable request signing
 }
 ```
 
-### `Experiment`
+## Environment Variables
 
-Experiment configuration object.
+Set these in your `.env` file:
 
-```typescript
-interface Experiment {
-  id: string; // Unique experiment ID
-  name: string; // Experiment name
-  variations: Variation[]; // Array of variations
-  version?: string; // Optional: Experiment version
-  description?: string; // Optional: Experiment description
-  startDate?: string; // Optional: Start date (ISO string)
-  endDate?: string; // Optional: End date (ISO string)
-  isActive?: boolean; // Optional: Whether experiment is active
-  successMetric?: {
-    // Optional: Success metric configuration
-    type: "click" | "conversion" | "custom";
-    target?: string;
-    value?: string;
-  };
-}
+```env
+NEXT_PUBLIC_ABTEST_API_KEY=your-api-key-here
+NEXT_PUBLIC_ABTEST_API_URL=http://localhost:3001/api
 ```
 
-### `Variation`
-
-Variation configuration object.
+Then use in your component:
 
 ```typescript
-interface Variation {
-  name: string; // Variation name
-  weight: number; // Traffic weight (0-1)
-  isBaseline?: boolean; // Whether this is the baseline variation
-}
+const { variation } = useExperiment({
+  experimentId: "exp-123",
+  userId: "user-123",
+  apiKey: process.env.NEXT_PUBLIC_ABTEST_API_KEY,
+  apiUrl: process.env.NEXT_PUBLIC_ABTEST_API_URL,
+});
 ```
 
 ## Event Tracking
@@ -148,22 +130,27 @@ interface Variation {
 ### Track Success Events
 
 ```typescript
-const { trackSuccess } = useExperiment(experiment, config);
+const { trackSuccess } = useExperiment({
+  experimentId: "button-test",
+  apiKey: "your-key",
+  apiUrl: "http://localhost:3001/api",
+});
 
 // Track a success event
-await trackSuccess({
-  conversionValue: 29.99,
-  productId: "product-123",
-});
+trackSuccess();
 ```
 
 ### Track Custom Events
 
 ```typescript
-const { trackSuccess } = useExperiment(experiment, config);
+const { trackSuccess } = useExperiment({
+  experimentId: "button-test",
+  apiKey: "your-key",
+  apiUrl: "http://localhost:3001/api",
+});
 
 // Track a custom event as a success event
-await trackSuccess({
+trackSuccess({
   event: "page_view",
   value: 1,
   page: "/checkout",
@@ -171,81 +158,56 @@ await trackSuccess({
 });
 ```
 
-## Login Sync
-
-The SDK automatically handles the scenario where a user visits a page without being logged in, gets assigned a variation, and then logs in later:
-
-```typescript
-// User visits page without userId
-const configWithoutUser = {
-  apiUrl: "http://localhost:3001/api",
-  // userId: undefined (not logged in)
-};
-
-const { variation } = useExperiment("button-test", configWithoutUser);
-// variation: "blue" (stored in localStorage only)
-
-// User logs in - userId becomes available
-const configWithUser = {
-  apiUrl: "http://localhost:3001/api",
-  userId: "user-123", // User just logged in
-};
-
-// The hook automatically:
-// 1. Detects userId change
-// 2. Syncs localStorage variation to backend
-// 3. Or uses existing backend variation if user already has one
-```
-
 ## Advanced Usage
-
-### Custom Random Function
-
-For testing or deterministic behavior:
-
-```typescript
-const config: ABTestConfig = {
-  apiUrl: "http://localhost:3001/api",
-  randomFn: () => 0.3, // Always returns 30% for testing
-};
-```
 
 ### Environment-Specific Configuration
 
 ```typescript
-const config: ABTestConfig = {
-  apiUrl: process.env.REACT_APP_ABTEST_API_URL || "http://localhost:3001/api",
-  environment: process.env.NODE_ENV as "development" | "staging" | "production",
+const { variation } = useExperiment({
+  experimentId: "button-test",
+  apiKey: process.env.NEXT_PUBLIC_ABTEST_API_KEY!,
+  apiUrl: process.env.NEXT_PUBLIC_ABTEST_API_URL!,
   debug: process.env.NODE_ENV === "development",
-};
+});
 ```
 
 ### Error Handling
 
 ```typescript
-const { variation, error, isLoading } = useExperiment(experiment, config);
+const { variation, error, isLoading } = useExperiment({
+  experimentId: "button-test",
+  apiKey: "your-key",
+  apiUrl: "http://localhost:3001/api",
+});
 
 if (error) {
   // Handle error - show fallback UI
-  return <FallbackComponent />;
+  return <div>Error: {error}</div>;
 }
 
 if (isLoading) {
   // Show loading state
-  return <LoadingSpinner />;
+  return <div>Loading...</div>;
 }
 
 // Use variation
-return <ExperimentComponent variation={variation} />;
+return <div>Variation: {variation}</div>;
 ```
+
+## Security Features
+
+- **API Key Authentication**: All requests require valid API keys
+- **Request Signing**: Optional HMAC-SHA256 request signing for enhanced security
+- **Custom Headers**: Support for additional security headers
+- **Environment Detection**: Automatically handles SSR and client-side environments
 
 ## Self-Hosted Setup
 
 This SDK works with the self-hosted A/B testing platform. To set up your own server:
 
-1. **Deploy the Backend**: Follow the deployment guide in the main repository
-2. **Configure API URL**: Point the SDK to your server's API endpoint
-3. **Set up Experiments**: Use the dashboard to create and manage experiments
+1. **Deploy the Backend**: Follow the setup guide in the main repository
+2. **Generate API Keys**: Use the dashboard at `/settings` to create API keys
+3. **Configure SDK**: Point the SDK to your server's API endpoint with your API key
 
 ## Browser Support
 
