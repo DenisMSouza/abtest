@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InlineCopyButton } from '@/components/InlineCopyButton';
 import { CreateExperimentForm } from '@/components/CreateExperimentForm';
+import { AIExperimentForm } from '@/components/AIExperimentForm';
 import {
   Pagination,
   PaginationContent,
@@ -44,6 +45,7 @@ export function ExperimentsList({
   experimentsPerPage,
 }: ExperimentsListProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   // Filter experiments
   const filteredExperiments = experiments.filter(experiment => {
@@ -66,13 +68,39 @@ export function ExperimentsList({
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
           <div className="flex flex-col space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-col gap-2">
               <h2 className="text-lg font-medium text-gray-900">Experiments</h2>
-              <CreateExperimentForm
-                open={showCreateForm}
-                onOpenChange={setShowCreateForm}
-                onSubmit={onCreateExperiment}
-              />
+              <div className="flex gap-2">
+                <AIExperimentForm
+                  open={showAIGenerator}
+                  onOpenChange={setShowAIGenerator}
+                  onSubmit={(suggestion) => {
+                    // Convert AI suggestion to experiment form data
+                    const experimentData = {
+                      name: suggestion.name,
+                      description: suggestion.description,
+                      version: "1.0.0", // Default version for AI-generated experiments
+                      variations: suggestion.variations.map(v => ({
+                        name: v.name,
+                        weight: v.weight,
+                        isBaseline: v.isBaseline
+                      })),
+                      successMetric: {
+                        type: "custom" as const,
+                        target: suggestion.successMetric
+                      }
+                    };
+
+                    // Create the experiment
+                    onCreateExperiment(experimentData);
+                  }}
+                />
+                <CreateExperimentForm
+                  open={showCreateForm}
+                  onOpenChange={setShowCreateForm}
+                  onSubmit={onCreateExperiment}
+                />
+              </div>
             </div>
 
             {/* Search and Filter Controls */}
@@ -256,6 +284,7 @@ export function ExperimentsList({
           )}
         </div>
       </div>
+
     </div>
   );
 }

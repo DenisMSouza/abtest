@@ -184,7 +184,7 @@ export function CreateExperimentForm({ open, onOpenChange, onSubmit }: CreateExp
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>New Experiment</Button>
+        <Button size="sm">New Experiment</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
