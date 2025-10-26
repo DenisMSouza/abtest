@@ -140,7 +140,13 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment }: Exper
 
           {/* Statistical Analysis */}
           {stats && stats.variations && stats.variations.length >= 2 && (
-            <StatisticalAnalysis variations={stats.variations} />
+            <StatisticalAnalysis
+              experimentId={experiment.id}
+              experimentName={experiment.name}
+              experiment={experiment}
+              stats={stats}
+              variations={stats.variations}
+            />
           )}
         </div>
       ) : (

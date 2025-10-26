@@ -5,9 +5,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 
-> **A complete, self-hosted A/B testing platform with React SDK, dashboard, and statistical analysis**
+> **A complete, self-hosted A/B testing platform with React SDK, dashboard, statistical analysis, and AI-powered features**
 
-A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies.
+A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies, enhanced with AI for intelligent experiment generation and analysis.
 
 ![A/B Testing Dashboard](./public/Screenshot%202025-10-23%20at%2016.36.23.png)
 
@@ -18,8 +18,84 @@ _Beautiful, modern dashboard for managing your experiments_
 - **📊 Beautiful Dashboard** - Create and manage experiments with an intuitive interface
 - **⚡ React SDK** - Easy-to-use hook for frontend integration
 - **📈 Statistical Analysis** - Built-in significance testing and performance metrics
+- **🤖 AI-Powered Features** - Intelligent experiment generation and statistical analysis
 - **🔒 Self-Hosted** - Complete control over your data and infrastructure
 - **🚀 Production Ready** - Docker support, API authentication, and more
+
+## 🤖 AI-Powered Features
+
+### ✨ AI Experiment Generator
+
+Create experiments with natural language descriptions. Simply describe what you want to test, and our AI will generate:
+
+- **Variation suggestions** with proper naming and descriptions
+- **Weight distributions** optimized for statistical power
+- **Success metrics** tailored to your use case
+- **Experiment duration** estimates based on expected traffic
+
+**Example:**
+
+```
+"Test different pricing strategies for our SaaS product to optimize conversion rates"
+```
+
+→ AI generates a complete experiment with Control vs Treatment variations, proper weights, and conversion tracking.
+
+### 🧠 AI Statistical Analysis
+
+Get intelligent insights from your experiment data:
+
+- **Automated analysis** of statistical significance and confidence levels
+- **Business recommendations** on whether to stop, continue, or adjust experiments
+- **Performance insights** identifying clear winners and losers
+- **Actionable next steps** for implementation and optimization
+- **Weight adjustment suggestions** based on performance data
+
+**What it analyzes:**
+
+- Conversion rates and statistical significance
+- Sample size adequacy
+- Practical vs statistical significance
+- Business impact and risk assessment
+- Implementation recommendations
+
+### 🔧 AI Configuration
+
+#### Quick Setup
+
+1. **Get OpenRouter API Key** (free credits available)
+
+   - Sign up at [OpenRouter.ai](https://openrouter.ai)
+   - Generate an API key from your dashboard
+
+2. **Configure Environment**
+
+   ```bash
+   # Add to .env.local
+   OPENROUTER_API_KEY=your-api-key-here
+   ```
+
+3. **Choose AI Model** (optional)
+
+   ```bash
+   # Development (cheap, fast)
+   OPENROUTER_MODEL=microsoft/phi-3-mini-128k-instruct
+
+   # Production (balanced)
+   OPENROUTER_MODEL=anthropic/claude-3.5-haiku
+   ```
+
+#### Cost Optimization
+
+- **Development**: Uses `phi-3-mini` ($0.20/1M tokens) - perfect for testing
+- **Production**: Uses `claude-3.5-haiku` ($1.00/1M tokens) - balanced quality/cost
+- **Custom**: Override with any OpenRouter model via `OPENROUTER_MODEL`
+
+#### Usage Examples
+
+- **Experiment Generation**: ~$0.001 per experiment created
+- **Statistical Analysis**: ~$0.002 per analysis
+- **Monthly Usage**: Typically under $5 for moderate usage
 
 ## 📸 Dashboard Preview
 
@@ -108,6 +184,14 @@ npm start
 - Confidence intervals
 - Relative uplift metrics
 - Sample size recommendations
+
+### 🤖 **AI-Powered Intelligence**
+
+- **AI Experiment Generator** - Create experiments with natural language
+- **AI Statistical Analysis** - Get intelligent insights and recommendations
+- **Smart Weight Optimization** - AI-suggested variation distributions
+- **Business Recommendations** - Stop, continue, or adjust experiments based on data
+- **Cost-Optimized Models** - Choose between fast/cheap or premium AI models
 
 ### 🔒 **Enterprise Security**
 

@@ -194,7 +194,7 @@ export default function Home() {
         {/* Features */}
         <div className="mt-12 lg:mt-16">
           <h2 className="text-2xl lg:text-3xl font-bold text-center mb-8 lg:mb-12">Features</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             <Card className="text-center">
               <CardContent className="pt-4 lg:pt-6">
                 <div className="bg-primary/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -226,6 +226,17 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Secure & Reliable</h3>
                 <p className="text-muted-foreground text-sm lg:text-base">Built with TypeScript and modern security practices</p>
+              </CardContent>
+            </Card>
+            <Card className="text-center">
+              <CardContent className="pt-4 lg:pt-6">
+                <div className="bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">AI-Powered</h3>
+                <p className="text-muted-foreground text-sm lg:text-base">Generate experiments with natural language and get intelligent analysis</p>
               </CardContent>
             </Card>
           </div>
