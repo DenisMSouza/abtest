@@ -76,14 +76,15 @@ export class AIStatisticalService extends AIBaseService {
       '  "nextSteps": ["step1", "step2", "step3"]\n' +
       "}\n\n" +
       "ANALYSIS GUIDELINES:\n" +
-      "- If p-value < 0.05 and confidence > 95%, recommend stopping with clear winner\n" +
-      "- If p-value > 0.05 but sample size is large (>1000 users), consider extending\n" +
-      "- If one variation is clearly underperforming (<50% of baseline), consider stopping\n" +
-      "- If results are inconclusive but promising, suggest weight adjustments\n" +
-      "- Always consider statistical significance, sample size, and practical significance\n" +
-      "- Provide specific, actionable recommendations\n" +
-      "- Be conservative with stopping recommendations unless very clear results\n" +
-      "- Consider business impact and risk tolerance";
+      "- CRITICAL: Only recommend stopping if p-value < 0.05 AND statistical significance is true\n" +
+      "- If p-value >= 0.05, the results are NOT statistically significant - recommend continuing\n" +
+      "- If p-value > 0.1, results are far from significance - definitely continue testing\n" +
+      "- If p-value is between 0.05-0.1, results are close to significance - consider extending\n" +
+      "- Sample size matters: larger samples (>1000) can detect smaller differences\n" +
+      "- Practical significance: even if statistically significant, consider if the difference is meaningful\n" +
+      "- Be VERY conservative with stopping recommendations - most experiments need more data\n" +
+      "- Always base recommendations on the provided statistical data, not assumptions\n" +
+      "- Consider business impact and risk tolerance when making recommendations";
 
     try {
       const userPrompt = `Analyze this A/B test experiment data:\n\n${JSON.stringify(

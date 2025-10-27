@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle, Target } from "lucide-react";
 import { AIStatisticalAnalysis } from "@/lib/ai-statistical-service";
+import { calculateStatisticalSignificance } from "@/app/utils/statistics";
 
 interface AIStatisticalAnalysisModalProps {
   experimentId: string;
@@ -86,12 +87,21 @@ export function AIStatisticalAnalysisModal({
           conversionRate: variation.successRate,
           isBaseline: variation.isBaseline,
         })),
-        // We'll let the AI calculate statistical significance
-        statisticalSignificance: {
-          pValue: 0, // Will be calculated by AI
-          confidenceLevel: 0, // Will be calculated by AI
-          isSignificant: false, // Will be calculated by AI
-        },
+        // Calculate real statistical significance
+        statisticalSignificance: calculateStatisticalSignificance(
+          {
+            name: stats.variations[0].name,
+            visitors: stats.variations[0].userCount,
+            conversions: stats.variations[0].successCount,
+            conversionRate: stats.variations[0].successRate,
+          },
+          {
+            name: stats.variations[1].name,
+            visitors: stats.variations[1].userCount,
+            conversions: stats.variations[1].successCount,
+            conversionRate: stats.variations[1].successRate,
+          }
+        ),
         relativeUplift: [], // Will be calculated by AI
       };
 
