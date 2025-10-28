@@ -4,10 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![OpenRouter](https://img.shields.io/badge/Powered%20by-OpenRouter-00A67E?logo=openai&logoColor=white)](https://openrouter.ai)
 
 > **A complete, self-hosted A/B testing platform with React SDK, dashboard, statistical analysis, and AI-powered features**
 
-A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies, enhanced with AI for intelligent experiment generation and analysis.
+A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies, enhanced with AI (via OpenRouter) for intelligent experiment generation and analysis.
 
 ![A/B Testing Dashboard](./public/Screenshot%202025-10-23%20at%2016.36.23.png)
 
@@ -23,6 +24,8 @@ _Beautiful, modern dashboard for managing your experiments_
 - **🚀 Production Ready** - Docker support, API authentication, and more
 
 ## 🤖 AI-Powered Features
+
+Powered by [OpenRouter](https://openrouter.ai) - access to multiple AI models with cost optimization and reliability.
 
 ### ✨ AI Experiment Generator
 
