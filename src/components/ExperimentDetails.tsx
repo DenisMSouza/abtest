@@ -5,16 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ExperimentIdSection } from '@/components/ExperimentIdSection';
 import { StatisticalAnalysis } from '@/components/StatisticalAnalysis';
+import { EditExperimentForm } from '@/components/EditExperimentForm';
 import { Experiment, ExperimentStats } from '@/types/experiment';
+import { updateExperiment } from '@/app/services/api';
 
 interface ExperimentDetailsProps {
   experiment: Experiment | null;
   stats: ExperimentStats | null;
   onStopExperiment: (experimentId: string) => void;
+  onExperimentUpdate?: () => void;
 }
 
-export function ExperimentDetails({ experiment, stats, onStopExperiment }: ExperimentDetailsProps) {
+export function ExperimentDetails({ experiment, stats, onStopExperiment, onExperimentUpdate }: ExperimentDetailsProps) {
   const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   const confirmStopExperiment = () => {
     setShowStopConfirm(true);
@@ -24,6 +28,36 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment }: Exper
     if (experiment) {
       onStopExperiment(experiment.id);
       setShowStopConfirm(false);
+    }
+  };
+
+  const handleUpdateExperiment = async (data: any) => {
+    if (!experiment || !data.id) return;
+
+    try {
+      await updateExperiment(data.id, data);
+      setShowEditForm(false);
+      // Refresh the experiment data
+      if (onExperimentUpdate) {
+        onExperimentUpdate();
+      }
+    } catch (error) {
+      console.error('Error updating experiment:', error);
+      throw error; // Re-throw to let the form handle the error
+    }
+  };
+
+  // Wrapper for AI modal that expects (experimentId, data) signature
+  const handleAIUpdateExperiment = async (experimentId: string, data: any) => {
+    try {
+      await updateExperiment(experimentId, data);
+      // Refresh the experiment data
+      if (onExperimentUpdate) {
+        onExperimentUpdate();
+      }
+    } catch (error) {
+      console.error('Error updating experiment:', error);
+      throw error;
     }
   };
 
@@ -57,13 +91,22 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment }: Exper
                 </div>
               </div>
               {experiment.isActive && (
-                <Button
-                  variant="destructive"
-                  onClick={confirmStopExperiment}
-                  className="w-full sm:w-auto"
-                >
-                  Stop Experiment
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <EditExperimentForm
+                    open={showEditForm}
+                    onOpenChange={setShowEditForm}
+                    experiment={experiment}
+                    onSubmit={handleUpdateExperiment}
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={confirmStopExperiment}
+                    className="w-full sm:w-auto"
+                  >
+                    Stop Experiment
+                  </Button>
+                </div>
               )}
             </div>
             <p className="text-gray-600 mb-4">{experiment.description}</p>
@@ -140,7 +183,15 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment }: Exper
 
           {/* Statistical Analysis */}
           {stats && stats.variations && stats.variations.length >= 2 && (
-            <StatisticalAnalysis variations={stats.variations} />
+            <StatisticalAnalysis
+              experimentId={experiment.id}
+              experimentName={experiment.name}
+              experiment={experiment}
+              stats={stats}
+              variations={stats.variations}
+              onStopExperiment={onStopExperiment}
+              onUpdateExperiment={handleAIUpdateExperiment}
+            />
           )}
         </div>
       ) : (

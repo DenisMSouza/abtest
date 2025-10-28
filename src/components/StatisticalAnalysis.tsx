@@ -5,9 +5,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AIStatisticalAnalysisModal } from '@/components/AIStatisticalAnalysisModal';
 import { calculateStatisticalSignificance, VariationStats } from '@/app/utils/statistics';
 
 interface StatisticalAnalysisProps {
+  experimentId: string;
+  experimentName: string;
+  experiment?: {
+    id: string;
+    name: string;
+    description?: string;
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+    updatedAt: string;
+    isActive: boolean;
+  };
+  stats?: {
+    variations: {
+      id: string;
+      name: string;
+      weight: number;
+      isBaseline: boolean;
+      userCount: number;
+      successCount: number;
+      successRate: number;
+      percentage: number;
+    }[];
+    totalUsers: number;
+  };
   variations: Array<{
     id: string;
     name: string;
@@ -16,6 +42,8 @@ interface StatisticalAnalysisProps {
     successRate: number;
     [key: string]: any; // Allow additional properties
   }>;
+  onStopExperiment?: (experimentId: string) => void;
+  onUpdateExperiment?: (experimentId: string, data: any) => Promise<void>;
 }
 
 // Statistical metric definitions
@@ -55,7 +83,15 @@ const STATISTICAL_METRICS = [
   }
 ];
 
-export function StatisticalAnalysis({ variations }: StatisticalAnalysisProps) {
+export function StatisticalAnalysis({
+  experimentId,
+  experimentName,
+  experiment,
+  stats,
+  variations,
+  onStopExperiment,
+  onUpdateExperiment
+}: StatisticalAnalysisProps) {
   // We need at least 2 variations to compare
   if (variations.length < 2) {
     return (
@@ -99,12 +135,26 @@ export function StatisticalAnalysis({ variations }: StatisticalAnalysisProps) {
     <TooltipProvider>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Statistical Analysis
-            <Badge variant={result.isSignificant ? "default" : "secondary"}>
-              {result.isSignificant ? "Significant" : "Not Significant"}
-            </Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
+                Statistical Analysis
+                <Badge variant={result.isSignificant ? "default" : "secondary"}>
+                  {result.isSignificant ? "Significant" : "Not Significant"}
+                </Badge>
+              </CardTitle>
+            </div>
+            {experiment?.isActive && (
+              <AIStatisticalAnalysisModal
+                experimentId={experimentId}
+                experimentName={experimentName}
+                experiment={experiment}
+                stats={stats}
+                onStopExperiment={onStopExperiment}
+                onUpdateExperiment={onUpdateExperiment}
+              />
+            )}
+          </div>
           <CardDescription>
             Statistical significance test at 95% confidence level
           </CardDescription>

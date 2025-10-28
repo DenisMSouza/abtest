@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getExperiments, createExperiment, getExperimentStats, updateExperiment } from '../services/api';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Experiment, ExperimentStats, StatusFilter, ExperimentFormData } from '@
 
 function DashboardContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
   const [stats, setStats] = useState<ExperimentStats | null>(null);
@@ -24,6 +25,7 @@ function DashboardContent() {
     loadExperiments();
   }, []);
 
+  // Handle URL-based experiment selection (from home page links)
   useEffect(() => {
     const experimentId = searchParams.get('experiment');
     if (experimentId && experiments.length > 0) {
@@ -34,6 +36,16 @@ function DashboardContent() {
       }
     }
   }, [searchParams, experiments]);
+
+  // Update selectedExperiment when experiments array changes (for internal updates)
+  useEffect(() => {
+    if (selectedExperiment && experiments.length > 0) {
+      const updatedExperiment = experiments.find(exp => exp.id === selectedExperiment.id);
+      if (updatedExperiment) {
+        setSelectedExperiment(updatedExperiment);
+      }
+    }
+  }, [experiments]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -135,6 +147,7 @@ function DashboardContent() {
             experiment={selectedExperiment}
             stats={stats}
             onStopExperiment={handleStopExperiment}
+            onExperimentUpdate={loadExperiments}
           />
         </div>
       </div>

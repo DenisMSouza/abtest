@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Experiment, Variation, UserVariation, SuccessEvent } from "../models";
+import { Op } from "sequelize";
 
 export const createExperiment = async (req: Request, res: Response) => {
   try {
@@ -66,8 +67,6 @@ export const createExperiment = async (req: Request, res: Response) => {
 
 export const getExperiments = async (req: Request, res: Response) => {
   try {
-    console.log("Starting getExperiments...");
-
     const experiments = await Experiment.findAll({
       include: [{ model: Variation, as: "variations" }],
       order: [["createdAt", "DESC"]],
@@ -90,8 +89,6 @@ export const getExperiments = async (req: Request, res: Response) => {
         };
       }
     );
-
-    console.log("Found experiments:", experimentsWithCalculatedActive.length);
 
     res.json(experimentsWithCalculatedActive);
   } catch (error) {
@@ -139,14 +136,39 @@ export const getExperiment = async (req: Request, res: Response) => {
 export const updateExperiment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, version, startDate, endDate, isActive } =
-      req.body;
+    const {
+      name,
+      description,
+      version,
+      startDate,
+      endDate,
+      isActive,
+      variations,
+      successMetric,
+    } = req.body;
 
     const experiment = await Experiment.findByPk(id);
     if (!experiment) {
       return res.status(404).json({ error: "Experiment not found" });
     }
 
+    // Validate variations weights if provided
+    if (variations && variations.length > 0) {
+      const totalWeight = variations.reduce((sum: number, variation: any) => {
+        return sum + (variation.weight || 0);
+      }, 0);
+
+      // Allow for small floating point precision errors (0.01%)
+      if (Math.abs(totalWeight - 1.0) > 0.0001) {
+        return res.status(400).json({
+          error: "Variation weights must sum to 100% (1.0)",
+          totalWeight: totalWeight,
+          expectedWeight: 1.0,
+        });
+      }
+    }
+
+    // Update experiment basic fields
     await experiment.update({
       name,
       description,
@@ -154,7 +176,48 @@ export const updateExperiment = async (req: Request, res: Response) => {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       isActive,
+      successMetric: successMetric || null,
     });
+
+    // Update variations if provided
+    if (variations && variations.length > 0) {
+      // Get existing variations
+      const existingVariations = await Variation.findAll({
+        where: { experimentId: id },
+      });
+
+      // Update existing variations or create new ones
+      for (const variationData of variations) {
+        const existingVariation = existingVariations.find(
+          (v) => v.name === variationData.name
+        );
+
+        if (existingVariation) {
+          // Update existing variation
+          await existingVariation.update({
+            weight: variationData.weight || 1.0,
+            isBaseline: variationData.isBaseline || false,
+          });
+        } else {
+          // Create new variation if it doesn't exist
+          await Variation.create({
+            experimentId: id,
+            name: variationData.name,
+            weight: variationData.weight || 1.0,
+            isBaseline: variationData.isBaseline || false,
+          });
+        }
+      }
+
+      // Remove variations that are no longer in the request
+      const requestedNames = variations.map((v: any) => v.name);
+      await Variation.destroy({
+        where: {
+          experimentId: id,
+          name: { [Op.notIn]: requestedNames },
+        },
+      });
+    }
 
     const updatedExperiment = await Experiment.findByPk(id, {
       include: [{ model: Variation, as: "variations" }],
