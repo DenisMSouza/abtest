@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle, Target } from "lucide-react";
+import { Loader2, Brain, TrendingUp, AlertTriangle, CheckCircle, Target, AlertCircle } from "lucide-react";
 import { AIStatisticalAnalysis } from "@/lib/ai-statistical-service";
 import { calculateStatisticalSignificance } from "@/app/utils/statistics";
 
@@ -23,6 +23,10 @@ interface AIStatisticalAnalysisModalProps {
     id: string;
     name: string;
     description?: string;
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+    updatedAt: string;
     isActive: boolean;
   };
   stats?: {
@@ -39,6 +43,8 @@ interface AIStatisticalAnalysisModalProps {
     totalUsers: number;
   };
   onAnalysisComplete?: (analysis: AIStatisticalAnalysis) => void;
+  onStopExperiment?: (experimentId: string) => void;
+  onUpdateExperiment?: (experimentId: string, data: any) => Promise<void>;
 }
 
 export function AIStatisticalAnalysisModal({
@@ -47,11 +53,14 @@ export function AIStatisticalAnalysisModal({
   experiment,
   stats,
   onAnalysisComplete,
+  onStopExperiment,
+  onUpdateExperiment,
 }: AIStatisticalAnalysisModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [analysis, setAnalysis] = useState<AIStatisticalAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
 
   // Reset state when modal opens
   const handleOpenChange = (open: boolean) => {
@@ -61,6 +70,46 @@ export function AIStatisticalAnalysisModal({
       setAnalysis(null);
       setError(null);
       setIsLoading(false);
+    }
+  };
+
+  // Calculate experiment duration
+  const calculateDuration = (experiment: any): string => {
+    if (!experiment) return "Unknown";
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date | null = null;
+
+    // Use startDate if available, otherwise use createdAt
+    if (experiment.startDate) {
+      startDate = new Date(experiment.startDate);
+    } else if (experiment.createdAt) {
+      startDate = new Date(experiment.createdAt);
+    } else {
+      return "Unknown";
+    }
+
+    // Use endDate if available (for both active and inactive experiments)
+    if (experiment.endDate) {
+      endDate = new Date(experiment.endDate);
+    }
+
+    // Calculate duration
+    const end = endDate || now;
+    const diffMs = end.getTime() - startDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+    } else {
+      return "Less than 1 minute";
     }
   };
 
@@ -79,13 +128,15 @@ export function AIStatisticalAnalysisModal({
         experimentId: experiment.id,
         experimentName: experiment.name,
         totalUsers: stats.totalUsers,
-        duration: "Unknown", // We don't have duration in our current data structure
+        duration: calculateDuration(experiment), // Calculate actual duration
+        endDate: experiment.endDate || null, // Include endDate information for AI decision making
         variations: stats.variations.map(variation => ({
           name: variation.name,
           users: variation.userCount,
           conversions: variation.successCount,
           conversionRate: variation.successRate,
           isBaseline: variation.isBaseline,
+          currentWeight: variation.weight, // Include current weight distribution
         })),
         // Calculate real statistical significance
         statisticalSignificance: calculateStatisticalSignificance(
@@ -155,6 +206,124 @@ export function AIStatisticalAnalysisModal({
         return "bg-yellow-50 border-yellow-200 text-yellow-800";
       default:
         return "bg-gray-50 border-gray-200 text-gray-800";
+    }
+  };
+
+  // Check if suggested weights are the same as current weights
+  const areWeightsSame = (suggestedWeights: Record<string, number>): boolean => {
+    if (!stats || !suggestedWeights) return false;
+
+    // Create a map of current weights by variation name
+    const currentWeights = new Map<string, number>();
+    stats.variations.forEach(variation => {
+      currentWeights.set(variation.name, variation.weight);
+    });
+
+    // Check if all suggested weights match current weights (with small tolerance for floating point)
+    for (const [variationName, suggestedWeight] of Object.entries(suggestedWeights)) {
+      const currentWeight = currentWeights.get(variationName);
+      if (currentWeight === undefined || Math.abs(currentWeight - suggestedWeight) > 0.01) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Apply AI suggestions based on the recommendation
+  const handleApplySuggestions = async () => {
+    if (!analysis || !experiment) return;
+
+
+    setIsApplying(true);
+    try {
+      const { action, suggestedWeights } = analysis.recommendations;
+
+
+      switch (action) {
+        case "stop":
+          if (onStopExperiment) {
+            onStopExperiment(experimentId);
+          }
+          break;
+
+        case "extend":
+          if (onUpdateExperiment && experiment.endDate) {
+            // Extend the experiment by 7 days from current end date
+            const currentEndDate = new Date(experiment.endDate);
+            const newEndDate = new Date(currentEndDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            await onUpdateExperiment(experimentId, {
+              endDate: newEndDate.toISOString().split('T')[0],
+            });
+          }
+          break;
+
+        case "adjust_weights":
+          if (onUpdateExperiment && suggestedWeights && stats) {
+            // Create variations array with updated weights
+            const updatedVariations = stats.variations.map(variation => ({
+              name: variation.name,
+              weight: suggestedWeights[variation.name] || variation.weight,
+              isBaseline: variation.isBaseline,
+            }));
+
+            await onUpdateExperiment(experimentId, {
+              variations: updatedVariations,
+            });
+          }
+          break;
+
+        case "continue":
+          // Apply weight adjustments if suggested, even for "continue" action
+          if (onUpdateExperiment && suggestedWeights && stats && !areWeightsSame(suggestedWeights)) {
+            // Create variations array with updated weights
+            const updatedVariations = stats.variations.map(variation => ({
+              name: variation.name,
+              weight: suggestedWeights[variation.name] || variation.weight,
+              isBaseline: variation.isBaseline,
+            }));
+
+            await onUpdateExperiment(experimentId, {
+              variations: updatedVariations,
+            });
+          }
+          break;
+
+        default:
+        // Unknown action - do nothing
+      }
+
+      // Close the modal after successful application
+      setIsOpen(false);
+    } catch (error) {
+      // Error handling - could be improved with user notification
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // Check if the current action can be applied
+  const canApplyAction = (): boolean => {
+    if (!analysis || !experiment) return false;
+
+    const { action, suggestedWeights } = analysis.recommendations;
+
+    // Check for actionable suggestions regardless of action type
+    const hasActionableWeights = !!suggestedWeights && !areWeightsSame(suggestedWeights);
+
+    switch (action) {
+      case "stop":
+        return !!onStopExperiment && experiment.isActive;
+      case "extend":
+        return !!onUpdateExperiment && !!experiment.endDate;
+      case "adjust_weights":
+        return !!onUpdateExperiment && hasActionableWeights;
+      case "continue":
+        // Show button if there are actionable weight suggestions, even for "continue"
+        return !!onUpdateExperiment && hasActionableWeights;
+      default:
+        return false;
     }
   };
 
@@ -259,18 +428,25 @@ export function AIStatisticalAnalysisModal({
                   <CardTitle className="text-lg">Performance Analysis</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {analysis.performance.winner && (
+                  {analysis.performance.winner && analysis.performance.winner !== "null" && (
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       <span className="font-medium">Winner: {analysis.performance.winner}</span>
                     </div>
                   )}
-                  {analysis.performance.loser && (
+                  {analysis.performance.loser && analysis.performance.loser !== "null" && (
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-red-500" />
                       <span className="font-medium">Underperforming: {analysis.performance.loser}</span>
                     </div>
                   )}
+                  {(!analysis.performance.winner || analysis.performance.winner === "null") &&
+                    (!analysis.performance.loser || analysis.performance.loser === "null") && (
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        <span className="font-medium text-yellow-700">No clear winner identified</span>
+                      </div>
+                    )}
                   <p className="text-sm text-gray-600">
                     {analysis.performance.analysis}
                   </p>
@@ -294,19 +470,63 @@ export function AIStatisticalAnalysisModal({
                     <p className="text-sm">{analysis.recommendations.details}</p>
                   </div>
 
-                  {analysis.recommendations.suggestedWeights && (
+                  {analysis.recommendations.suggestedWeights && !areWeightsSame(analysis.recommendations.suggestedWeights) && (
                     <div className="mt-4">
                       <h4 className="font-medium mb-2">Suggested Weight Adjustments:</h4>
-                      <div className="space-y-1">
-                        {Object.entries(analysis.recommendations.suggestedWeights).map(
-                          ([variation, weight]) => (
-                            <div key={variation} className="flex justify-between text-sm">
-                              <span>{variation}</span>
-                              <span className="font-medium">{Math.round(weight * 100)}%</span>
+                      {(() => {
+                        const weights = Object.values(analysis.recommendations.suggestedWeights);
+                        const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+                        const isValid = Math.abs(totalWeight - 1.0) < 0.01; // Allow small floating point errors
+
+                        return (
+                          <>
+                            {!isValid && (
+                              <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                                ⚠️ Warning: Weights sum to {(totalWeight * 100).toFixed(1)}% (should be 100%)
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              {Object.entries(analysis.recommendations.suggestedWeights).map(
+                                ([variation, weight]) => (
+                                  <div key={variation} className="flex justify-between text-sm">
+                                    <span>{variation}</span>
+                                    <span className="font-medium">{Math.round(weight * 100)}%</span>
+                                  </div>
+                                )
+                              )}
                             </div>
-                          )
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Apply Suggestions Button */}
+                  {canApplyAction() && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Button
+                        onClick={handleApplySuggestions}
+                        disabled={isApplying}
+                        className="w-full gap-2"
+                        variant={analysis.recommendations.action === "stop" ? "destructive" : "default"}
+                      >
+                        {isApplying ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Applying...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4" />
+                            Apply Suggestions
+                          </>
                         )}
-                      </div>
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {analysis.recommendations.action === "stop" && "This will stop the experiment"}
+                        {analysis.recommendations.action === "extend" && "This will extend the experiment by 7 days"}
+                        {analysis.recommendations.action === "adjust_weights" && "This will update variation weights"}
+                      </p>
                     </div>
                   )}
                 </CardContent>

@@ -15,6 +15,10 @@ interface StatisticalAnalysisProps {
     id: string;
     name: string;
     description?: string;
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+    updatedAt: string;
     isActive: boolean;
   };
   stats?: {
@@ -38,6 +42,8 @@ interface StatisticalAnalysisProps {
     successRate: number;
     [key: string]: any; // Allow additional properties
   }>;
+  onStopExperiment?: (experimentId: string) => void;
+  onUpdateExperiment?: (experimentId: string, data: any) => Promise<void>;
 }
 
 // Statistical metric definitions
@@ -77,7 +83,15 @@ const STATISTICAL_METRICS = [
   }
 ];
 
-export function StatisticalAnalysis({ experimentId, experimentName, experiment, stats, variations }: StatisticalAnalysisProps) {
+export function StatisticalAnalysis({
+  experimentId,
+  experimentName,
+  experiment,
+  stats,
+  variations,
+  onStopExperiment,
+  onUpdateExperiment
+}: StatisticalAnalysisProps) {
   // We need at least 2 variations to compare
   if (variations.length < 2) {
     return (
@@ -130,12 +144,16 @@ export function StatisticalAnalysis({ experimentId, experimentName, experiment, 
                 </Badge>
               </CardTitle>
             </div>
-            <AIStatisticalAnalysisModal
-              experimentId={experimentId}
-              experimentName={experimentName}
-              experiment={experiment}
-              stats={stats}
-            />
+            {experiment?.isActive && (
+              <AIStatisticalAnalysisModal
+                experimentId={experimentId}
+                experimentName={experimentName}
+                experiment={experiment}
+                stats={stats}
+                onStopExperiment={onStopExperiment}
+                onUpdateExperiment={onUpdateExperiment}
+              />
+            )}
           </div>
           <CardDescription>
             Statistical significance test at 95% confidence level

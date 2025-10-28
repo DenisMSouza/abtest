@@ -39,26 +39,32 @@ export abstract class AIBaseService {
       );
     }
 
+    // Clean the response first - remove control characters except newlines and tabs
+    let cleanedResponse = response.replace(
+      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+      ""
+    );
+
     // Check if response is wrapped in markdown code blocks
-    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    const jsonMatch = cleanedResponse.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       return jsonMatch[1].trim();
     }
 
     // Try to find a complete JSON object by looking for proper structure
-    const jsonStart = response.indexOf("{");
+    const jsonStart = cleanedResponse.indexOf("{");
     if (jsonStart === -1) {
-      return response;
+      return cleanedResponse;
     }
 
     // Look for a complete JSON object by counting braces
     let braceCount = 0;
     let jsonEnd = -1;
 
-    for (let i = jsonStart; i < response.length; i++) {
-      if (response[i] === "{") {
+    for (let i = jsonStart; i < cleanedResponse.length; i++) {
+      if (cleanedResponse[i] === "{") {
         braceCount++;
-      } else if (response[i] === "}") {
+      } else if (cleanedResponse[i] === "}") {
         braceCount--;
         if (braceCount === 0) {
           jsonEnd = i;
@@ -68,16 +74,16 @@ export abstract class AIBaseService {
     }
 
     if (jsonEnd !== -1) {
-      return response.substring(jsonStart, jsonEnd + 1);
+      return cleanedResponse.substring(jsonStart, jsonEnd + 1);
     }
 
     // Fallback: try to find any valid JSON-like structure
-    const fallbackMatch = response.match(/\{[^{}]*\}/);
+    const fallbackMatch = cleanedResponse.match(/\{[^{}]*\}/);
     if (fallbackMatch) {
       return fallbackMatch[0];
     }
 
-    return response;
+    return cleanedResponse;
   }
 
   // Common error handling for AI API calls
@@ -145,7 +151,14 @@ export abstract class AIBaseService {
 
   // Common method to parse AI response as JSON
   protected static parseAIResponse<T>(response: string): T {
-    const jsonString = this.extractJsonFromResponse(response);
-    return JSON.parse(jsonString);
+    try {
+      const jsonString = this.extractJsonFromResponse(response);
+      return JSON.parse(jsonString);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON format: ${error.message}`);
+      }
+      throw error;
+    }
   }
 }

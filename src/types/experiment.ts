@@ -3,6 +3,10 @@ export interface Experiment {
   name: string;
   description?: string;
   version?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
   isActive: boolean;
   variations: Variation[];
 }
@@ -19,6 +23,10 @@ export interface ExperimentStats {
     id: string;
     name: string;
     description?: string;
+    startDate?: string;
+    endDate?: string;
+    createdAt: string;
+    updatedAt: string;
     isActive: boolean;
   };
   variations: {
@@ -37,7 +45,7 @@ export interface ExperimentStats {
 export interface ExperimentFormData {
   name: string;
   description?: string;
-  version: string;
+  version?: string;
   startDate?: string;
   endDate?: string;
   successMetric?: {
