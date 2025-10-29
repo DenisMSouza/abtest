@@ -100,12 +100,6 @@ Get intelligent insights from your experiment data:
 - **Statistical Analysis**: ~$0.002 per analysis
 - **Monthly Usage**: Typically under $5 for moderate usage
 
-## 📸 Dashboard Preview
-
-![A/B Testing Dashboard](https://via.placeholder.com/800x500/1e40af/ffffff?text=A%2FB+Testing+Dashboard)
-
-_Beautiful, modern dashboard for managing your experiments_
-
 ## 🚀 Quick Start
 
 ### 1. Install the SDK
@@ -232,10 +226,9 @@ npm install @denismartins/abtest-sdk
 
 ## 📚 Documentation
 
-- **[Hook Usage Guide](HOOK_USAGE.md)** - Complete frontend integration guide
+- **[SDK Documentation](sdk/README.md)** - Complete frontend integration guide
 - **[Setup Instructions](SETUP.md)** - Backend and dashboard setup
 - **[API Documentation](backend/README.md)** - Backend API reference
-- **[SDK Documentation](sdk/README.md)** - React SDK reference
 
 ## 🔗 Repository Information
 
