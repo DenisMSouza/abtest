@@ -133,7 +133,10 @@ dist
 
 # Gatsby files
 .cache/
-public
+# Allow public directory but ignore specific files
+public/*
+!public/screenshot.png
+!public/*.svg
 
 # Storybook build outputs
 .out
