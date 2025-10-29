@@ -58,10 +58,57 @@ npm start
 
 ## Security
 
+### Multi-layered Security Approach
+
+- **Server Binding**: Server bound to `127.0.0.1` (localhost only) by default
+- **Security Headers**: Helmet.js provides comprehensive HTTP security headers
+- **Rate Limiting**: Configurable rate limiting to prevent abuse
+- **Request Validation**: Input validation and size limits
+- **Compression**: Response compression for performance
+- **Security Logging**: Comprehensive request/response logging
+
+### Route Protection
+
 - **Public routes**: Require valid API key in `Authorization: Bearer <key>` header
-- **Internal routes**: Restricted to localhost only (no API key needed)
+- **Internal routes**: Multiple protection options:
+  - **Option 1**: IP-based localhost restriction (current default)
+  - **Option 2**: API key validation (set `INTERNAL_API_KEY` env var)
 - **API key management**: Database-driven with secure generation
-- **IP-based access control**: Internal routes protected by IP whitelist
+
+### Environment Configuration
+
+Create a `.env` file with optional security settings:
+
+```bash
+# Server Configuration
+PORT=3001
+HOST=127.0.0.1
+NODE_ENV=development
+
+# Dashboard Configuration (optional)
+# Dashboard origins - where the admin dashboard runs
+# Default: http://localhost:3000,http://127.0.0.1:3000
+DASHBOARD_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+# Hook Configuration (optional)
+# Frontend origins where the A/B test hook will be used
+# Comma-separated list of origins
+# Example: HOOK_ORIGINS=http://localhost:3002,http://localhost:5173,https://myapp.com
+HOOK_ORIGINS=http://localhost:3002,http://localhost:5173
+
+# Security (optional)
+INTERNAL_API_KEY=your-super-secret-api-key-here
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+```
+
+**CORS Configuration:**
+
+- `DASHBOARD_ORIGINS`: Dashboard origins (always included, default: localhost:3000)
+- `HOOK_ORIGINS`: Frontend origins where your applications using the A/B test hook will run
+- Both support comma-separated lists
+- Dashboard origins are always included automatically
+- Hook origins are optional - only add them if you're using the hook in external applications
 
 ## Database Schema
 
