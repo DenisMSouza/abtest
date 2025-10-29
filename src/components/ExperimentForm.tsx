@@ -433,17 +433,18 @@ export function ExperimentForm({
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex items-center gap-1">
                 <Label className="text-sm font-medium">Variations</Label>
                 <span className="text-red-500">*</span>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={autoBalanceWeights}
+                  className="w-full sm:w-auto"
                 >
                   Balance Weights
                 </Button>
@@ -452,6 +453,7 @@ export function ExperimentForm({
                   variant="outline"
                   size="sm"
                   onClick={addVariation}
+                  className="w-full sm:w-auto"
                 >
                   + Add Variation
                 </Button>

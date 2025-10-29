@@ -120,7 +120,6 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment, onExper
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-blue-900">Variations</h3>
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 </div>
                 <div className="space-y-3">
                   {experiment.variations?.sort((a, b) => {
@@ -128,17 +127,16 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment, onExper
                     if (!a.isBaseline && b.isBaseline) return 1;
                     return 0;
                   }).map((variation) => (
-                    <div key={variation.id} className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-blue-200/50">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${variation.isBaseline ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
-                        <span className="font-medium text-gray-900">{variation.name}</span>
-                        {variation.isBaseline && (
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                            Baseline
-                          </span>
-                        )}
+                    <div key={variation.id} className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-blue-200/50 relative">
+                      {variation.isBaseline && (
+                        <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                          B
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-sm text-gray-900">{variation.name}</span>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right p-1">
                         <div className="text-lg font-bold text-blue-900">{Math.round(variation.weight * 100)}%</div>
                       </div>
                     </div>
@@ -159,17 +157,16 @@ export function ExperimentDetails({ experiment, stats, onStopExperiment, onExper
                       if (!a.isBaseline && b.isBaseline) return 1;
                       return 0;
                     }).map((variation) => (
-                      <div key={variation.id} className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-green-200/50">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${variation.isBaseline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span className="font-medium text-gray-900">{variation.name}</span>
-                          {variation.isBaseline && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                              Baseline
-                            </span>
-                          )}
+                      <div key={variation.id} className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-green-200/50 relative">
+                        {variation.isBaseline && (
+                          <div className="absolute -top-2 -left-2 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            B
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-sm text-gray-900">{variation.name}</span>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right p-1">
                           <div className="text-lg font-bold text-green-900">{variation.userCount}</div>
                           <div className="text-xs text-green-600">{Math.round(variation.percentage)}%</div>
                         </div>
