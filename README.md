@@ -10,7 +10,7 @@
 
 A powerful, open-source A/B testing solution that gives you full control over your experiments. Built with React, TypeScript, and modern web technologies, enhanced with AI (via OpenRouter) for intelligent experiment generation and analysis.
 
-![A/B Testing Dashboard](./public/Screenshot.png)
+![A/B Testing Dashboard](./public/screenshot.png)
 
 _Beautiful, modern dashboard for managing your experiments_
 
